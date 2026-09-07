@@ -1,0 +1,15 @@
+node_modules/
+dist/
+target/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+evidence/
+final-resumes/
+temp/
