@@ -80,3 +80,7 @@
 ## 6. 2026-09-08 Demo 交付补充
 
 浏览器 Demo 的验证范围与结果见 [FRONTEND_DEMO.md](FRONTEND_DEMO.md)，桌面初始化与真实窗口证据见 [DESKTOP_SETUP.md](DESKTOP_SETUP.md)。PRODUCT_SPEC 定义六项用户反馈和 AI Assistant 的显式应用行为；TECH_SPEC 定义 Proposal 旧值校验、原子应用、草稿隔离及 Requirement 快照；WORK_MANUAL 增加服务、浏览器和桌面回归要求；IMPLEMENTATION_PLAN 标记 M0-T1 完成。原 INV-01–08、31 表和 53 个正式 Task 不变。未把离线问答、草稿记录或虚拟文件计为真实 AI、职业事实、持久化或投递。
+
+## 7. Learning Map 一致性补充
+
+2026-09-08 将项目驱动学习纳入工作流。[LEARNING_MAP.md](../LEARNING_MAP.md) 不改变产品范围、技术合同或 Task 顺序；它按当前实施计划建立知识点及全部 53 个正式 Task 的唯一映射。Storage 保持在 M0-T2，避免沿用外部草稿中与本项目不一致的 Milestone 分层。项目落地状态与 JKai 的理解层级分离，Agent 不得因代码存在而代替用户宣称掌握。

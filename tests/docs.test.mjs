@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md'];
+const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'LEARNING_MAP.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md'];
 const docs = Object.fromEntries(names.map(name => [name, readFileSync(resolve(root, name), 'utf8')]));
 const baselineTaskCounts = [5, 5, 6, 5, 5, 6, 7, 6, 6];
 const expectedTasks = baselineTaskCounts.flatMap((count, milestone) =>
@@ -67,6 +67,15 @@ test('product defines exactly seven numbered Feature Specs', () => {
 
 test('all 51 original tasks and two explicit additions retain outputs and acceptance', () => {
   validateTasks(docs['IMPLEMENTATION_PLAN.md'], docs['docs/CONSISTENCY_CHECK.md']);
+});
+
+test('learning map covers every implementation task exactly once', () => {
+  const learning = docs['LEARNING_MAP.md'];
+  const mappedTasks = [...learning.matchAll(/^\| (M\d+-T\d+) \|/gm)].map(match => match[1]);
+  assert.equal(mappedTasks.length, new Set(mappedTasks).size, 'duplicate learning task mapping');
+  assert.deepEqual([...mappedTasks].sort(), [...expectedTasks].sort(), 'learning task coverage changed');
+  assert.match(learning, /项目状态与个人理解分开记录/);
+  assert.match(learning, /下一项不是泛学数据库/);
 });
 
 test('seven Features and eight invariants have actual implementation/test mappings', () => {

@@ -4,9 +4,9 @@
 
 ## 1. 开工顺序
 
-1. 读取 [AGENTS.md](AGENTS.md)、[PRODUCT_SPEC.md](PRODUCT_SPEC.md)、[TECH_SPEC.md](TECH_SPEC.md)、本文件及 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
+1. 读取 [AGENTS.md](AGENTS.md)、[PRODUCT_SPEC.md](PRODUCT_SPEC.md)、[TECH_SPEC.md](TECH_SPEC.md)、本文件、[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)及 [LEARNING_MAP.md](LEARNING_MAP.md) 中当前 Task 的映射。
 2. 检查实际代码、Git 状态、前置 Task 与环境；不把规划中的目录/功能当作已存在。
-3. 只领取一个 Task，复述目标、涉及规则、验收与最小文件范围；普通实现选择自主完成。
+3. 只领取一个 Task，复述目标、涉及规则、验收与最小文件范围；编码前用 Career Copilot 当前实例解释 Learning 映射中的核心概念和目标层级，普通实现选择自主完成。
 4. 文档与代码冲突先说明并提出最小修复方案，不自行大规模重构。重大产品功能、MVP 范围、隐私或核心架构调整需明确方案后确认；普通工程细节无需逐项询问。
 
 ## 2. 文档分工
@@ -45,7 +45,7 @@ PRODUCT_SPEC.md 决定用户行为和范围，TECH_SPEC.md 决定实现合同、
 2. **每次改动编写或更新相关测试**；实现任务先写关键失败行为测试，文档任务更新合同验证。不能用“测试框架以后再建”免除测试。
 3. 实现最小改动，处理当前 Task 的关键失败路径，不顺手扩 Scope。
 4. 运行相关测试、类型/编译/格式等现有项目检查；涉及界面或桌面启动时实际验证主路径。测试全部通过后才进入交付。
-5. 自查架构、不变量、隐私、历史数据及 Git diff；同步文档、计划状态与验证记录。
+5. 自查架构、不变量、隐私、历史数据及 Git diff；结合真实代码与测试复盘 Learning 映射，记录关键取舍，且不把“项目已使用”冒充“JKai 已掌握”；同步文档、计划状态与验证记录。
 6. **每次完成独立改动创建对应 Git commit**。提交只包含本 Task 文件，使用 feat/fix/test/docs/chore 等清楚前缀，业务任务包含 Task ID。不要自动 push、改写历史或夹带他人改动。
 7. 检查提交存在及工作区状态，报告 commit、验证、剩余问题。未通过不能标完成；环境缺失如阻塞必须明确记录，不能以 mock 通过代替真实桌面启动。
 

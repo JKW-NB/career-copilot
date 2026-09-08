@@ -4,7 +4,7 @@
 
 **Architecture**：Career / Job / Resume 业务用例通过 AI Gateway 和 Storage，AI 提案、代码约束、历史快照追加写。技术栈 Tauri、React、TypeScript、SQLite、本地文件、BYOK。
 
-本计划保留原草案 M0–M8 与原 Task 编号，新增 M1-T6、M4-T6 补齐冻结功能遗漏。采用逐 Task 执行方式；工具或技能名称不是后续 Agent 的强制依赖。每次读取四份文档与实际代码，按 [WORK_MANUAL.md](WORK_MANUAL.md) 测试、验证、更新状态并 commit。产品规则见 [PRODUCT_SPEC.md](PRODUCT_SPEC.md)，字段与合同见 [TECH_SPEC.md](TECH_SPEC.md)。
+本计划保留原草案 M0–M8 与原 Task 编号，新增 M1-T6、M4-T6 补齐冻结功能遗漏。采用逐 Task 执行方式；工具或技能名称不是后续 Agent 的强制依赖。每次读取四份核心文档、[LEARNING_MAP.md](LEARNING_MAP.md) 与实际代码，按 [WORK_MANUAL.md](WORK_MANUAL.md) 测试、验证、更新状态并 commit。产品规则见 [PRODUCT_SPEC.md](PRODUCT_SPEC.md)，字段与合同见 [TECH_SPEC.md](TECH_SPEC.md)。
 
 ## 当前状态
 
@@ -20,7 +20,7 @@
 
 每个表格行是一个 Task，包含目标、文件落点和可观察验收；不是让 Agent 一次实现整张表。目录是建议落点，按实际骨架细化，不预先建立大量空文件。进入 Task 时将该行细化为最小变更与测试；每次完成后在文末交付记录新增状态、实际验证和 commit，可使用新行保留历史。
 
-固定步骤：读取输入 → 写/更新关键行为测试 → 实现 → 运行所有相关检查 → 验证失败路径 → 更新文档与状态 → Git commit。主测试优先放在对应模块旁；跨模块/恢复测试放 `tests/integration/`，端到端放 `tests/e2e/`。
+固定步骤：读取输入与该 Task 的 [Learning 映射](LEARNING_MAP.md#3-task--learning-映射) → 开工前用当前项目解释核心概念 → 写/更新关键行为测试 → 实现 → 运行所有相关检查 → 验证失败路径 → 用真实代码复盘并更新 Learning 状态 → 更新文档与状态 → Git commit。主测试优先放在对应模块旁；跨模块/恢复测试放 `tests/integration/`，端到端放 `tests/e2e/`。
 
 ## M0 — Project Foundation
 

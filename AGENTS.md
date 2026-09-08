@@ -2,7 +2,7 @@
 
 注意事项·每次改动完成后，都必须创建一个对应的Git commit，以便后续追踪和回滚。每次改动后，都必须编写或更新相关测试，并在交付给用户前，确保所有测试和验证全部通过。
 
-开始任务前依次读取 PRODUCT_SPEC.md、TECH_SPEC.md、WORK_MANUAL.md、IMPLEMENTATION_PLAN.md，并检查当前代码和 Git 状态。每次只执行一个 Task；普通实现细节自主决定，重大产品、范围、隐私或架构变化先提出具体方案。
+开始任务前依次读取 PRODUCT_SPEC.md、TECH_SPEC.md、WORK_MANUAL.md、IMPLEMENTATION_PLAN.md、LEARNING_MAP.md 中当前 Task 的映射，并检查当前代码和 Git 状态。每次只执行一个 Task；编码前结合 Career Copilot 解释对应概念，完成后用代码和测试复盘。普通实现细节自主决定，重大产品、范围、隐私或架构变化先提出具体方案。
 
 以 WORK_MANUAL.md 的完成定义为准。一次完整、独立可验证的改动对应一个 commit；不是每次保存文件都提交。失败检查不得跳过或宣称通过；修复后再提交。不得夹带其他人的未提交改动，不自动推送远程。
 
