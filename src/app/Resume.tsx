@@ -33,7 +33,7 @@ export function Resume({ state, service, run, inspect, goTab }: PageProps) {
 function ContentCard({ item, index, count, service, run, inspect, edit, copy }: { item: ContentItem; index: number; count: number; service: PageProps['service']; run: PageProps['run']; inspect: PageProps['inspect']; edit: () => void; copy: () => void }) {
   const contribution = getContribution(item.contributionId);
   const proofIds = [...new Set(item.factIds.flatMap(id => getFact(id).proofs))];
-  return <article className="content-card" data-testid={item.id}>
+  return <article className="content-card" data-testid={item.id} data-ai-target={`bullet:${item.id}`}>
     <div className="content-heading"><div><span className="eyebrow">{contribution.organization}<span> / </span>{contribution.period}</span><h3>{contribution.title}</h3></div><span className="content-number">0{index + 1}</span></div>
     <button className="content-text" onClick={() => inspect({ kind: 'contribution', id: contribution.id })}><span className="bullet-dot" /><span>{item.text}</span><ArrowUpRight size={16} /></button>
     <div className="purpose-line"><span>证明责任</span>{proofIds.map(id => <button key={id} onClick={() => inspect({ kind: 'proof', id })}>{requirements.find(proof => proof.id === id)?.title}</button>)}</div>

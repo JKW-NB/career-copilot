@@ -3,8 +3,10 @@ import { contributions, facts, getContribution, getFact, job, requirements, type
 export interface PortfolioItem { contributionId: string; role: Role; factIds: string[] }
 export interface Requirement { id: string; title: string; subtitle: string; priority: string; quote: string; rationale: string; included: boolean }
 export interface AssetDraft { id: string; title: string; organization: string; summary: string }
-export type WorkspaceAction = { kind: 'add'; title: string; organization: string; summary: string } | { kind: 'edit' | 'delete'; id: string; before: string; summary: string } | { kind: 'remove'; id: string; before: string };
-export interface Proposal { id: string; action: WorkspaceAction; status: 'pending' | 'applied' | 'dismissed' }
+export type FieldTarget = { type: 'description' | 'bullet' | 'requirement'; id: string };
+type UndoData = Pick<DemoState, 'assetDrafts' | 'portfolio' | 'content' | 'descriptions' | 'requirements'>;
+export type WorkspaceAction = { kind: 'field'; target: FieldTarget; before: string; text: string } | { kind: 'add'; title: string; organization: string; summary: string } | { kind: 'edit' | 'delete'; id: string; before: string; summary: string } | { kind: 'remove'; id: string; before: string };
+export interface Proposal { id: string; action: WorkspaceAction; status: 'pending' | 'applied' | 'dismissed' | 'undone' }
 export interface PortfolioSnapshot { version: number; items: PortfolioItem[]; requirements: Requirement[] }
 export type RewriteStyle = 'standard' | 'compact' | 'business' | 'technical';
 export interface ContentItem { id: string; contributionId: string; factIds: string[]; pinned: string[]; text: string; style: RewriteStyle }
@@ -12,12 +14,14 @@ export interface Content { basedOnVersion: number; sourceItems: PortfolioItem[];
 export interface ReadyContent extends Content { version: number }
 export interface FinalSample { id: string; name: string; contentVersion: number; status: 'FINAL' | 'USED' | 'ARCHIVED'; used: boolean }
 export interface DemoState {
+  descriptions: Record<string, string>; undo: { proposalId: string; before: UndoData; after: UndoData; keys: (keyof UndoData)[] } | null;
   assetDrafts: AssetDraft[]; requirements: Requirement[]; proposals: Proposal[]; sequence: number;
   portfolio: PortfolioItem[]; confirmed: PortfolioSnapshot | null; content: Content | null;
   pendingEdit: { itemId: string; text: string } | null; ready: ReadyContent[]; files: FinalSample[];
 }
 const safeFacts = (id: string) => getContribution(id).facts.filter(factId => getFact(factId).verification !== 'UNCERTAIN');
 const initial = (): DemoState => ({
+  descriptions: Object.fromEntries(contributions.map(item => [item.id, item.summary])), undo: null,
   assetDrafts: [], requirements: requirements.map(item => ({ ...item, included: true })), proposals: [], sequence: 0,
   portfolio: ['agent', 'research', 'pipeline'].map((contributionId, i) => ({ contributionId, role: i < 2 ? 'CORE' : 'SUPPORTING', factIds: safeFacts(contributionId) })),
   confirmed: null, content: null, pendingEdit: null, ready: [], files: [],
@@ -54,6 +58,12 @@ export function compose(factIds: string[], style: RewriteStyle): string {
 function compileItem(item: PortfolioItem): ContentItem {
   return { id: `content-${item.contributionId}`, contributionId: item.contributionId, factIds: [...item.factIds], pinned: [], text: compose(item.factIds, 'standard'), style: 'standard' };
 }
+export function fieldValue(state: DemoState, target: FieldTarget): string {
+  const value = target.type === 'description' ? state.descriptions[target.id] : target.type === 'bullet' ? state.content?.items.find(item => item.id === target.id)?.text : state.requirements.find(item => item.id === target.id)?.rationale;
+  if (value === undefined) throw new Error('目标已不存在，请重新选择。');
+  return value;
+}
+const undoData = (state: DemoState): UndoData => structuredClone({ assetDrafts: state.assetDrafts, portfolio: state.portfolio, content: state.content, descriptions: state.descriptions, requirements: state.requirements });
 export function createDemoService() {
   let state = freeze(initial());
   const listeners = new Set<() => void>();
@@ -92,13 +102,26 @@ export function createDemoService() {
       if (!['核心', '重要', '辅助'].includes(priority)) throw new Error('重要性无效。');
       next.requirements.push({ id: `custom-${++next.sequence}`, title: title.trim(), rationale: rationale.trim(), subtitle: '用户补充', quote: '用户补充要求，并非岗位原文。', priority, included: true });
     }),
-    propose: (action: WorkspaceAction) => { let id = ''; change(next => { id = `proposal-${++next.sequence}`; next.proposals.push({ id, action, status: 'pending' }); }); return id; },
+    propose: (action: WorkspaceAction) => { let id = ''; change(next => { id = `proposal-${++next.sequence}`; next.proposals.push({ id, action: structuredClone(action), status: 'pending' }); }); return id; },
     dismissProposal: (id: string) => change(next => { const proposal = next.proposals.find(item => item.id === id); if (proposal?.status === 'pending') proposal.status = 'dismissed'; }),
     applyProposal: (id: string) => change(next => {
       const proposal = next.proposals.find(item => item.id === id);
       if (!proposal || proposal.status !== 'pending') throw new Error('该建议已处理或不存在。');
+      const before = undoData(next);
       const action = proposal.action;
-      if (action.kind === 'add') addDraft(next, action);
+      if (action.kind === 'field') {
+        if (fieldValue(next, action.target) !== action.before) throw new Error('目标内容已变化，请重新生成建议。');
+        if (!action.text.trim()) throw new Error('新内容不能为空。');
+        if (action.target.type === 'bullet') {
+          if (next.pendingEdit) throw new Error('请先处理待审查文字。');
+          const item = findContent(next, action.target.id);
+          const style = (['standard', 'compact', 'business', 'technical'] as RewriteStyle[]).find(value => compose(item.factIds, value) === action.text);
+          if (!style || item.factIds.some(id => getFact(id).verification === 'UNCERTAIN')) throw new Error('建议包含无法确认的事实，请先完成事实审查。');
+          item.text = action.text; item.style = style;
+        } else if (action.target.type === 'description') next.descriptions[action.target.id] = action.text.trim();
+        else next.requirements.find(item => item.id === action.target.id)!.rationale = action.text.trim();
+      }
+      else if (action.kind === 'add') addDraft(next, action);
       else if (action.kind === 'remove') {
         const item = next.portfolio.find(item => item.contributionId === action.id);
         if (!item || JSON.stringify(item) !== action.before) throw new Error('组合已变化，请重新生成建议。');
@@ -110,6 +133,17 @@ export function createDemoService() {
         else { if (!action.summary.trim()) throw new Error('描述不能为空。'); draft.summary = action.summary.trim(); }
       }
       proposal.status = 'applied';
+      const after = undoData(next);
+      const keys = (Object.keys(before) as (keyof UndoData)[]).filter(key => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
+      next.undo = { proposalId: id, before, after, keys };
+    }),
+    undoLastProposal: () => change(next => {
+      const undo = next.undo;
+      if (!undo) throw new Error('没有可撤销的 AI 修改。');
+      if (undo.keys.some(key => JSON.stringify(next[key]) !== JSON.stringify(undo.after[key]))) throw new Error('相关内容已有后续修改，无法安全撤销。');
+      for (const key of undo.keys) Object.assign(next, { [key]: structuredClone(undo.before[key]) });
+      next.proposals.find(item => item.id === undo.proposalId)!.status = 'undone';
+      next.undo = null;
     }),
     getSnapshot: () => state,
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },

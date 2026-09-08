@@ -61,4 +61,6 @@ PRODUCT_SPEC.md 决定用户行为和范围，TECH_SPEC.md 决定实现合同、
 
 ## 7. 交付格式
 
+AI Side Panel 的交互验收须覆盖默认收起、打开不跳页且主页面可操作、收起保留会话、多目标选择、预览前无写入、确认后精准应用、拒绝/撤销、过期建议与后续修改保护。UI 改写复用事实边界，不能因增加应用按钮而绕过 INV-01–05。
+
 简洁说明 Completed（完成内容）、Verification（实际检查与结果）、Changed（关键文件）、Remaining（未完成/阻塞）、Risks（已发现的范围外风险）及 commit。没有的项写 None，避免开发流水账；对 JKai 使用中文。

@@ -1,59 +1,83 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { PanelRightClose, Send, Sparkles, Undo2 } from 'lucide-react';
 import { contributions, facts } from '../demo/fixtures';
+import { mockSuggestion, type AssistantTarget } from '../application/assistant-context';
 import { type WorkspaceAction } from '../application/demo-service';
 import { Badge, type PageProps } from './shared';
 
-interface Message { question: string; answer: string; contexts: string[]; proposalId?: string; preview?: string }
-export function Assistant({ state, service, run, contexts, setContexts }: PageProps & { contexts: string[]; setContexts: (values: string[]) => void }) {
+interface Message { question: string; answer: string; contexts: string[]; page: string; target?: string; before?: string; after?: string; proposalId?: string }
+interface AssistantProps extends PageProps {
+  contexts: string[]; setContexts: (values: string[]) => void;
+  open: boolean; onClose: () => void; targets: AssistantTarget[];
+  focusKey: string; setFocusKey: (key: string) => void; pageContext: string;
+}
+export function Assistant({ state, service, run, contexts, setContexts, open, onClose, targets, focusKey, setFocusKey, pageContext }: AssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState('');
-  const [operation, setOperation] = useState('question');
-  const [target, setTarget] = useState('');
+  const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
-  const [picker, setPicker] = useState(false);
-  const options = operation === 'remove' ? state.portfolio.map(item => ({ id: item.contributionId, title: contributions.find(value => value.id === item.contributionId)!.title })) : state.assetDrafts;
+  const [error, setError] = useState('');
+  const scroller = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const target = targets.find(item => item.key === focusKey);
+  useEffect(() => { if (open) input.current?.focus(); }, [open]);
+  useEffect(() => { scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' }); }, [messages]);
   const send = () => {
     if (!question.trim()) return;
+    setError('');
+    const request = question.trim();
+    const modifying = adding || (!/如何|怎么|为什么|是否/.test(request) && /重写|改写|修改|优化|精简|润色|补充|删除|移除|移出|新增|添加|改为/.test(request));
     let action: WorkspaceAction | undefined;
-    let preview = '';
-    if (operation === 'add') {
-      action = { kind: 'add', title, organization: '', summary: question.trim() };
-      preview = `新增资产草稿「${title}」\n描述：${question.trim()}`;
-      if (!title.trim()) { run(() => { throw new Error('请填写新增资产名称。'); }); return; }
-    } else if (operation === 'remove') {
-      const item = state.portfolio.find(value => value.contributionId === target);
-      if (!item) { run(() => { throw new Error('请选择要移出组合的贡献。'); }); return; }
-      action = { kind: 'remove', id: target, before: JSON.stringify(item) };
-      preview = `从当前工作组合移出「${options.find(value => value.id === target)!.title}」。职业资产和历史版本保留。`;
-    } else if (operation === 'edit' || operation === 'delete') {
-      const draft = state.assetDrafts.find(item => item.id === target);
-      if (!draft) { run(() => { throw new Error('请选择一项资产草稿。'); }); return; }
-      action = { kind: operation, id: target, before: JSON.stringify(draft), summary: question.trim() };
-      preview = operation === 'edit' ? `修改「${draft.title}」\n修改前：${draft.summary}\n修改后：${question.trim()}` : `删除资产草稿「${draft.title}」\n当前描述：${draft.summary}`;
-    }
-    let answer = '这是离线交互演示，暂时不能生成开放问题的真实 AI 回答。你可以选择上下文，并体验下方的新增、修改或删除建议流程。';
-    if (/缺口|补充|能力|证明/.test(question)) answer = '示例建议：先核对岗位要求，再检查现有经历是否有对应的个人行动与结果。没有直接证据时，可以补充真实材料或保留缺口；不要推测数字和个人责任。';
-    if (contexts.length) answer += ` 本轮已附带 ${contexts.length} 项上下文，见本条消息。`;
-    let proposalId: string | undefined;
-    if (action) { proposalId = service.propose(action); answer = '已按你选择的操作整理以下改动草案。请核对目标和内容，再决定是否应用。新增与修改的描述仍是待审查草稿，不会直接进入简历。'; }
-    setMessages(previous => [...previous, { question: question.trim(), answer, contexts: [...contexts], proposalId, preview }]);
-    setQuestion('');
+    let after: string | undefined;
+    let targetLabel = target?.label;
+    let answer = target ? `当前选中「${target.label}」。可以核对行动、责任范围及结果是否有事实支撑，再决定是否调整表达。` : `你正在查看「${pageContext}」。可选择下面的具体内容进行分析或修改。`;
+    try {
+      if (modifying) {
+        if (adding || /新增资产|添加资产/.test(request)) {
+          if (!title.trim()) throw new Error('请先点击“新增资产”，填写资产名称与描述。');
+          action = { kind: 'add', title, organization: '', summary: request.replace(/^(新增资产|添加资产)[：:]?\s*/, '') };
+          after = action.summary; targetLabel = `职业资产 > ${title} > 新资产草稿`;
+        } else {
+          if (!target) throw new Error('请选择要修改的目标内容；建议会明确显示应用位置。');
+          ({ action, after } = mockSuggestion(state, target, request));
+        }
+        answer = '已生成修改预览，请核对应用位置和新内容。';
+        if (target?.kind === 'bullet') answer += '本次演示只重组已有可信事实，保留数字和固定事实。';
+      } else if (/缺口|补充|能力|证明/.test(request)) answer += '示例分析：先检查相关经历中的具体行动与结果；证据不足时可补材料或保留缺口，不推测指标。';
+      const proposalId = action ? service.propose(action) : undefined;
+      setMessages(previous => [...previous, { question: request, answer, contexts: [...contexts, ...(target ? [target.text] : [])], page: pageContext, target: targetLabel, before: adding ? undefined : target?.text, after, proposalId }]);
+      setQuestion(''); setAdding(false); setTitle('');
+    } catch (failure) { setError(failure instanceof Error ? failure.message : '未生成建议，请重试。'); }
   };
-  return <section className="assistant-page">
-    <div className="section-heading"><div><h1>AI 助手</h1><p>提问、引用工作区内容，并审核修改建议。</p></div><Badge tone="orange">离线演示 · 未连接模型</Badge></div>
-    <div className="assistant-messages" aria-live="polite">{!messages.length && <p className="muted">可以询问岗位能力、经历选材或描述方式。选中页面文字后点击“加入 AI 上下文”，也可以在这里选择资产和事实。</p>}{messages.map((message, index) => {
-      const proposal = state.proposals.find(item => item.id === message.proposalId);
-      return <article className="chat-turn" key={index}><h3>你</h3><p>{message.question}</p>{message.contexts.length > 0 && <details><summary>本轮上下文（{message.contexts.length}）</summary>{message.contexts.map((context, i) => <blockquote key={i}>{context}</blockquote>)}</details>}<h3>助手 · 演示回复</h3><p>{message.answer}</p>{proposal && <div className="proposal"><pre>{message.preview}</pre>{proposal.status === 'pending' ? <div className="modal-actions"><button className="button button-secondary" onClick={() => service.dismissProposal(proposal.id)}>不应用</button><button className="button button-primary" onClick={() => run(() => service.applyProposal(proposal.id), '已应用到当前工作区。')}>应用到当前工作区</button></div> : <Badge>{proposal.status === 'applied' ? '已应用' : '已放弃'}</Badge>}</div>}</article>;
-    })}</div>
-    <div className="context-chips" aria-label="已选 AI 上下文">{contexts.map((context, index) => <div key={index}><span>{context}</span><button aria-label={`移除上下文${index + 1}`} onClick={() => setContexts(contexts.filter((_, i) => i !== index))}>×</button></div>)}</div>
-    <button className="text-button" onClick={() => setPicker(!picker)}>{picker ? '收起内容选择' : '选择工作区内容作为上下文'}</button>
-    {picker && <div className="context-picker">{[...contributions.map(item => `${item.title}：${item.summary}`), ...facts.map(item => `${item.text}（${item.verification}）`), ...state.assetDrafts.map(item => `草稿 ${item.title}：${item.summary}`)].map(value => <label key={value}><input type="checkbox" checked={contexts.includes(value)} onChange={event => setContexts(event.target.checked ? [...contexts, value] : contexts.filter(item => item !== value))} />{value}</label>)}</div>}
-    <form className="form-stack chat-composer" onSubmit={event => { event.preventDefault(); send(); }}>
-      <label>本次操作<select value={operation} onChange={event => { setOperation(event.target.value); setTarget(''); }}><option value="question">仅提问</option><option value="add">建议新增资产</option><option value="edit">建议修改草稿描述</option><option value="delete">建议删除资产草稿</option><option value="remove">建议移出当前组合</option></select></label>
-      {operation === 'add' && <label>新增资产名称<input value={title} onChange={event => setTitle(event.target.value)} required maxLength={80} /></label>}
-      {['edit', 'delete', 'remove'].includes(operation) && <label>操作对象<select required value={target} onChange={event => setTarget(event.target.value)}><option value="">请选择</option>{options.map(item => <option value={item.id} key={item.id}>{item.title}</option>)}</select></label>}
-      <label>{operation === 'add' || operation === 'edit' ? '期望的描述' : '问题或操作说明'}<textarea aria-label="发送给 AI 助手的内容" required rows={3} value={question} onChange={event => setQuestion(event.target.value)} placeholder="输入问题，或写下希望应用的改动…" /></label>
-      <button className="button button-primary">发送{operation !== 'question' && '并生成建议'}</button>
-    </form>
-  </section>;
+  return <aside id="ai-side-panel" className="ai-side-panel" aria-label="AI 助手面板" hidden={!open} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); } }}>
+    <header className="ai-panel-header"><div><Sparkles size={18} /><h2>AI 助手</h2><Badge>演示</Badge></div><button className="icon-button" aria-label="收起 AI 助手" onClick={onClose}><PanelRightClose size={20} /></button></header>
+    <section className="ai-current-context" aria-label="当前上下文">
+      <span className="field-label">当前上下文</span><p>{pageContext}</p>
+      {targets.length ? <label>目标内容<select aria-label="AI 修改目标" value={target?.key ?? ''} onChange={event => setFocusKey(event.target.value)}><option value="">选择具体内容（{targets.length} 项）</option>{targets.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label> : <p className="muted">当前页面可提问，暂无可编辑目标。</p>}
+      {target && <details><summary>查看当前内容</summary><p>{target.text}</p></details>}
+      <details><summary>附加上下文（{contexts.length}）</summary><div className="context-chips" aria-label="已选 AI 上下文">{contexts.map((context, index) => <div key={index}><span>{context}</span><button aria-label={`移除上下文${index + 1}`} onClick={() => setContexts(contexts.filter((_, i) => i !== index))}>×</button></div>)}</div>
+        <div className="context-picker">{[...contributions.map(item => `${item.title}：${state.descriptions[item.id]}`), ...facts.map(item => `${item.text}（${item.verification}）`), ...state.assetDrafts.map(item => `草稿 ${item.title}：${item.summary}`)].map(value => <label key={value}><input type="checkbox" checked={contexts.includes(value)} onChange={event => setContexts(event.target.checked ? [...contexts, value] : contexts.filter(item => item !== value))} />{value}</label>)}</div>
+      </details>
+    </section>
+    <div className="ai-conversation" ref={scroller} role="log" aria-label="AI 对话" aria-live="polite">
+      {!messages.length && <div className="ai-welcome"><Sparkles size={26} /><h3>可以直接讨论当前内容</h3><p>选择页面中的经历或 Bullet，再提出问题或修改要求。修改会先展示预览。</p><small>当前使用本地示例回复，未连接真实 AI。</small></div>}
+      {messages.map((message, index) => { const proposal = state.proposals.find(item => item.id === message.proposalId); return <article className="chat-turn" key={index}>
+        <div className="ai-user-message">{message.question}</div>
+        <details className="ai-message-context"><summary>本轮上下文（{message.contexts.length}）</summary><p>{message.page}</p>{message.contexts.map((value, i) => <blockquote key={i}>{value}</blockquote>)}</details>
+        <p className="ai-answer">{message.answer}</p>
+        {proposal && <div className="proposal"><strong>应用到：{message.target}</strong>{message.before && <details><summary>修改前</summary><p>{message.before}</p></details>}<span className="field-label">修改预览</span><p className="ai-preview">{message.after}</p>
+          {proposal.status === 'pending' ? <><p>是否应用到当前内容？</p><div className="ai-proposal-actions"><button className="button button-primary" onClick={() => run(() => service.applyProposal(proposal.id), '已应用')}>应用修改</button><button className="button button-secondary" onClick={() => service.dismissProposal(proposal.id)}>暂不应用</button></div></> : <div className="ai-proposal-actions"><Badge>{proposal.status === 'applied' ? '已应用' : proposal.status === 'undone' ? '已撤销' : '暂不应用'}</Badge>{proposal.status === 'applied' && state.undo?.proposalId === proposal.id && <button className="text-button" onClick={() => run(() => service.undoLastProposal(), '已撤销最近一次 AI 修改')}><Undo2 size={14} />撤销修改</button>}</div>}
+        </div>}
+      </article>; })}
+    </div>
+    <footer className="ai-composer">
+      <div className="ai-shortcuts"><button onClick={() => { setAdding(false); setQuestion('请分析当前内容'); input.current?.focus(); }}>分析内容</button><button onClick={() => { setAdding(false); setQuestion('请重写当前内容'); input.current?.focus(); }}>重写内容</button>{pageContext === '职业资产' && <button onClick={() => { setAdding(true); setQuestion(''); }}>新增资产</button>}</div>
+      <form onSubmit={event => { event.preventDefault(); send(); }}>
+        {adding && <label className="ai-new-title">新增资产名称<input required value={title} onChange={event => setTitle(event.target.value)} maxLength={80} /><button type="button" className="text-button" onClick={() => setAdding(false)}>取消新增</button></label>}
+        <textarea ref={input} aria-label="发送给 AI 助手的内容" required value={question} onChange={event => setQuestion(event.target.value)} placeholder={adding ? '输入新资产的经历描述…' : '针对当前内容提问，或要求修改…'} rows={3} />
+        {error && <p className="ai-error" role="alert">{error}</p>}
+        <div className="ai-input-footer"><small>建议经你确认后才会应用</small><button className="button button-primary" aria-label="发送" disabled={!question.trim()}><Send size={15} /></button></div>
+      </form>
+    </footer>
+  </aside>;
 }

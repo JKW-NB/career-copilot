@@ -8,7 +8,7 @@ export type Inspection = { kind: 'proof' | 'contribution' | 'fact'; id: string }
 export interface PageProps {
   state: DemoState; service: DemoService; run: (action: () => void, message?: string) => boolean;
   inspect: (value: Inspection) => void; goTab: (tab: Tab) => void;
-  askAssistant: (text: string) => void; newAsset: () => void;
+  askAssistant: (text: string, key?: string) => void; newAsset: () => void;
 }
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'green' | 'orange' | 'red' }) {
   return <span className={`badge badge-${tone}`}>{children}</span>;
@@ -56,6 +56,6 @@ export function ContextPanel({ state, selection, inspect, askAssistant }: { stat
       <div className="context-section"><span className="section-overline">所属贡献</span><button className="context-fact" onClick={() => inspect({ kind: 'contribution', id: fact.contributionId })}><span>{getContribution(fact.contributionId).title}</span><ArrowUpRight size={14} /></button></div>
       <p className="context-note">{fact.verification === 'UNCERTAIN' ? '这条主张尚未确认。可以保留在资产里，但不能直接进入简历。' : '这份 Demo 中的验证状态由合成场景预设，未核验真实材料。'}</p>
     </>}
-    <button className="button button-secondary" onClick={() => askAssistant(proof ? `${proof.title}（${proof.priority}）：${proof.rationale}` : contribution ? `${contribution.title}：${contribution.summary}` : fact ? `${fact.text}（${fact.verification}）` : '当前岗位策略')}>加入上下文，询问 AI</button>
+    <button className="button button-secondary" onClick={() => askAssistant(proof ? `${proof.title}（${proof.priority}）：${proof.rationale}` : contribution ? `${contribution.title}：${state.descriptions[contribution.id]}` : fact ? `${fact.text}（${fact.verification}）` : '当前岗位策略')}>加入上下文，询问 AI</button>
   </aside>;
 }

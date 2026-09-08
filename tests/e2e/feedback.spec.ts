@@ -49,32 +49,31 @@ test('new assets can be created and found without becoming trusted resume facts'
   await expect(page.getByLabel('已选 AI 上下文')).toContainText('校园研究项目');
 });
 
-test('assistant supports selected context and explicit apply, edit and discard', async ({ page }) => {
-  await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
-  await page.getByRole('button', { name: '选择工作区内容作为上下文' }).click();
-  await page.locator('.context-picker input').first().check();
-  await page.getByLabel('本次操作').selectOption('add');
-  await page.getByLabel('新增资产名称').fill('助手创建的草稿');
-  await page.getByLabel('发送给 AI 助手的内容').fill('整理调研资料');
-  await page.getByRole('button', { name: '发送并生成建议' }).click();
-  await expect(page.locator('.chat-turn').last()).toContainText('本轮上下文（1）');
+test('assistant suggests asset creation, editing and dismissal without navigating', async ({ page }) => {
   await page.getByRole('navigation').getByRole('button', { name: /职业资产/ }).click();
-  await expect(page.getByRole('heading', { name: '助手创建的草稿' })).toHaveCount(0);
   await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
-  await page.getByRole('button', { name: '应用到当前工作区' }).click();
-  await page.getByLabel('本次操作').selectOption('edit');
-  await page.getByLabel('操作对象').selectOption({ label: '助手创建的草稿' });
-  await page.getByLabel('发送给 AI 助手的内容').fill('整理调研资料与访谈记录');
-  await page.getByRole('button', { name: '发送并生成建议' }).click();
-  await page.getByRole('button', { name: '应用到当前工作区' }).click();
-  await page.getByLabel('本次操作').selectOption('delete');
-  await page.getByLabel('操作对象').selectOption({ label: '助手创建的草稿' });
-  await page.getByLabel('发送给 AI 助手的内容').fill('不再需要');
-  await page.getByRole('button', { name: '发送并生成建议' }).click();
-  await page.getByRole('button', { name: '不应用' }).click();
-  await page.screenshot({ path: path.join(os.tmpdir(), 'career-copilot-assistant.png'), fullPage: true });
-  await page.getByRole('navigation').getByRole('button', { name: /职业资产/ }).click();
+  const panel = page.getByRole('complementary', { name: 'AI 助手面板' });
+  await expect(page.getByRole('heading', { name: '职业资产', exact: true })).toBeVisible();
+  await panel.getByText('附加上下文（0）').click();
+  await panel.locator('.context-picker input').first().check();
+  await panel.getByRole('button', { name: '新增资产', exact: true }).click();
+  await panel.getByLabel('新增资产名称').fill('助手创建的草稿');
+  await panel.getByLabel('发送给 AI 助手的内容').fill('整理调研资料');
+  await panel.getByRole('button', { name: '发送', exact: true }).click();
+  await expect(panel.locator('.chat-turn').last()).toContainText('本轮上下文（1）');
+  await expect(page.locator('.asset-card').getByRole('heading', { name: '助手创建的草稿' })).toHaveCount(0);
+  await panel.getByRole('button', { name: '应用修改' }).click();
+  await expect(page.locator('.asset-card').getByRole('heading', { name: '助手创建的草稿' })).toBeVisible();
+  await panel.getByLabel('AI 修改目标').selectOption({ label: '职业资产 > 助手创建的草稿 > 经历描述' });
+  await panel.getByLabel('发送给 AI 助手的内容').fill('改为：整理调研资料与访谈记录');
+  await panel.getByRole('button', { name: '发送', exact: true }).click();
+  await panel.getByRole('button', { name: '应用修改' }).click();
   await expect(page.locator('.asset-card').getByText('整理调研资料与访谈记录', { exact: true })).toBeVisible();
+  await panel.getByLabel('发送给 AI 助手的内容').fill('删除这项资产');
+  await panel.getByRole('button', { name: '发送', exact: true }).click();
+  await panel.getByRole('button', { name: '暂不应用', exact: true }).click();
+  await expect(page.locator('.asset-card').getByText('整理调研资料与访谈记录', { exact: true })).toBeVisible();
+  await page.screenshot({ path: path.join(os.tmpdir(), 'career-copilot-assistant.png'), fullPage: true });
 });
 
 test('highlighted page text can be attached to a question', async ({ page }) => {
@@ -85,7 +84,7 @@ test('highlighted page text can be attached to a question', async ({ page }) => 
   await expect(page.getByLabel('已选 AI 上下文')).toContainText('具体参与过方案设计');
   await page.getByLabel('发送给 AI 助手的内容').fill('这项能力如何补充？');
   await page.getByRole('button', { name: '发送', exact: true }).click();
-  await expect(page.locator('.chat-turn')).toContainText('示例建议');
+  await expect(page.locator('.chat-turn')).toContainText('示例分析');
 });
 
 test('readable type and single overview slogan work on mobile too', async ({ page }) => {
@@ -100,6 +99,7 @@ test('readable type and single overview slogan work on mobile too', async ({ pag
   expect(await sidebarLabel.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBe(12);
   await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: '收起 AI 助手' }).click();
   await page.getByRole('navigation').getByRole('button', { name: /求职工作区/ }).click();
   await page.getByTestId('requirement-industry').getByRole('button', { name: /待补充/ }).click();
   await expect(page.getByRole('dialog')).toBeVisible();

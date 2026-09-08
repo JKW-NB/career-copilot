@@ -6,6 +6,8 @@ Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 
 
 ## 1. 架构边界
 
+AI Side Panel 实现合同：App 保存展开态与当前页面，Assistant 常驻挂载以保留收起后的会话；assistant-context 根据页面/Tab 枚举可编辑目标，点击内容可带入目标，发送时固定目标与上下文快照。FieldTarget 区分 description/bullet/requirement，字段修改经 DemoService 校验旧值和事实准入后写入；descriptions 只保存工作描述，不替代 Fact 或历史快照。Proposal 增加 undone 状态。单步 Undo 保存此次涉及的数据部分，撤销前核对应用后值；有后续修改时拒绝撤销，不触及 Ready/Final/Confirmed 历史。生产化继续复用现有业务用例，不把此内存实现当作数据库方案。
+
 冻结栈：Tauri + React + TypeScript + SQLite + Local File Storage + BYOK AI Gateway。无独立 Node 后端、云服务、队列、账户系统。M0-T1 核验官方兼容要求后固定具体依赖版本及锁文件；原对话没有冻结版本号，不能把安装时的选择描述成已有决策。
 
 ```text
