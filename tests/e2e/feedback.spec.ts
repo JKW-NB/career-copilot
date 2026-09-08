@@ -90,10 +90,14 @@ test('highlighted page text can be attached to a question', async ({ page }) => 
 
 test('readable type and single overview slogan work on mobile too', async ({ page }) => {
   expect(await page.getByTestId('requirement-ai').locator('p').first().evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(15);
+  const sidebarLabel = page.getByRole('navigation').getByRole('button', { name: /求职工作区/ }).locator('> span');
+  expect(await sidebarLabel.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBe(14);
+  expect(await sidebarLabel.locator('small').evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBe(12);
   await expect(page.getByText('让真实经历，成为你的下一步。')).toHaveCount(0);
   await page.getByRole('navigation').getByRole('button', { name: /今日概览/ }).click();
   await expect(page.getByText('让真实经历，成为你的下一步。')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
+  expect(await sidebarLabel.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBe(12);
   await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('navigation').getByRole('button', { name: /求职工作区/ }).click();

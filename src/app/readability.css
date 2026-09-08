@@ -36,6 +36,15 @@ p { line-height: 1.8; }
 .context-panel { overflow-wrap: anywhere; }
 .main-panel .muted, .context-section p { color: #697465; }
 .search-input kbd { font-size: 13px; }
+.sidebar-section-label,
+.sidebar-direction .sidebar-section-label,
+.sidebar-direction button,
+.settings-nav,
+.profile small { font-size: 12px; }
+.sidebar .nav-item > span,
+.profile strong { font-size: 14px; }
+.sidebar .nav-item small,
+.sidebar .nav-item > em { font-size: 12px; }
 .button { white-space: normal; }
 @media (max-width: 800px) {
   .requirement-card { padding: 18px; }
@@ -46,6 +55,7 @@ p { line-height: 1.8; }
 @media (max-width: 600px) {
   .sidebar nav { overflow-x: auto; justify-content: flex-start; }
   .sidebar .nav-item { min-width: 84px; flex-shrink: 0; }
+  .sidebar .nav-item > span { font-size: 12px; }
   .requirement-top .title-button { font-size: 17px; }
   .requirement-bottom { align-items: start; flex-direction: column; }
   .requirement-card p, .form-stack label { font-size: 15px; }
