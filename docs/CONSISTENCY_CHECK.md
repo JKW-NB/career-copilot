@@ -1,6 +1,6 @@
 # 四份核心文档一致性检查
 
-审查日期：2026-09-07。结论：规格基线可交给 Coding Agent 逐 Task 实施；M0-T1 尚未执行。此结论不代表程序、真实数据库、模型或桌面运行已验收。
+审查日期：2026-09-07；M0-T1 状态复核：2026-09-08。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化已验收，真实数据库与模型仍未实现。
 
 ## 1. 来源与取舍
 
@@ -67,14 +67,16 @@
 
 ## 5. 验证方法与交接限制
 
-本轮新增 `tests/docs.test.mjs`，用 Node 内置测试工具，无需安装依赖。运行 `node --test tests/docs.test.mjs` 检查四文档/AGENTS、七个 Feature、全部原任务及新增任务、31 表清单、INV 覆盖、合同枚举、Markdown 链接/围栏、M0-T1 待执行标记；反例验证缺少任务、错误映射、断链、遗漏不变量、未闭合围栏会失败。另运行 `git diff --check`。
+`tests/docs.test.mjs` 使用 Node 内置测试工具，检查四文档、AGENTS、桌面说明、七个 Feature、全部原任务及新增任务、31 表清单、INV 覆盖、合同枚举、Markdown 链接/围栏和 M0-T1 真实验收标记；反例验证缺少任务、错误映射、断链、遗漏不变量、未闭合围栏会失败。另运行 `git diff --check`。
 
 语义一致性由逐项对照来源及上述两张矩阵审查；自动文档测试不证明产品实现正确。后续实际业务不变量测试分别在各 Task 编写，M8 集成验证，不将本轮文本检查冒充业务测试。
 
 本轮实际文档测试结果：15 项通过、0 失败、0 跳过（Node v24.11.1）。最终提交前重跑同一命令并执行暂存区 whitespace 检查；提交本身及干净工作区由提交后检查确认。
 
-M0-T1 开工前还需：定位/配置 Rust/Cargo，核验 C++ build tools、WebView2 与所选 Tauri 版本要求；固定依赖版本和锁文件；真正启动桌面窗口。当前环境只验证 Git/Node 可用，未执行应用或 Provider 验证。
+原文档基线开工条件已在 M0-T1 完成：Rust/Cargo、C++ build tools、WebView2 和 Tauri 兼容要求已核验，依赖及锁文件已固定，桌面窗口已实际启动验证。Provider 验证仍属于 M0-T4。
+
+2026-09-08 M0-T1 验收：Rust 1.98.1、Visual Studio Build Tools 17.14.39、WebView2 152.0.4191.66 与 Tauri 依赖已核验；Cargo check/test 和 debug 构建通过。构建版与开发版真实 Tauri/WebView2 窗口各连续两轮通过导航、AI 面板、示例简历流程、关闭和重启 smoke。
 
 ## 6. 2026-09-08 Demo 交付补充
 
-上节为文档基线当日记录。本次已有浏览器 Demo，实际验证范围与结果见 [FRONTEND_DEMO.md](FRONTEND_DEMO.md)，并非桌面或 Provider 验证。PRODUCT_SPEC 定义六项用户反馈和 AI Assistant 的显式应用行为；TECH_SPEC 定义 Proposal 旧值校验、原子应用、草稿隔离及 Requirement 快照；WORK_MANUAL 增加相应服务/浏览器回归要求；IMPLEMENTATION_PLAN 记录 DEMO-T1/T2 并保留 M0-T1 未完成。原 INV-01–08、31 表和 53 个正式 Task 不变，生产化沿用 Gateway、Career Review 与 Job Analysis 版本用例。未把离线问答、草稿记录或虚拟文件计为真实 AI、职业事实或投递。
+浏览器 Demo 的验证范围与结果见 [FRONTEND_DEMO.md](FRONTEND_DEMO.md)，桌面初始化与真实窗口证据见 [DESKTOP_SETUP.md](DESKTOP_SETUP.md)。PRODUCT_SPEC 定义六项用户反馈和 AI Assistant 的显式应用行为；TECH_SPEC 定义 Proposal 旧值校验、原子应用、草稿隔离及 Requirement 快照；WORK_MANUAL 增加服务、浏览器和桌面回归要求；IMPLEMENTATION_PLAN 标记 M0-T1 完成。原 INV-01–08、31 表和 53 个正式 Task 不变。未把离线问答、草稿记录或虚拟文件计为真实 AI、职业事实、持久化或投递。

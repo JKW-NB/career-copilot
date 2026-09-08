@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md'];
+const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md'];
 const docs = Object.fromEntries(names.map(name => [name, readFileSync(resolve(root, name), 'utf8')]));
 const baselineTaskCounts = [5, 5, 6, 5, 5, 6, 7, 6, 6];
 const expectedTasks = baselineTaskCounts.flatMap((count, milestone) =>
@@ -121,12 +121,13 @@ test('AGENTS retains the exact requested commit and testing instruction', () => 
   assert.ok(docs['AGENTS.md'].includes('注意事项·每次改动完成后，都必须创建一个对应的Git commit，以便后续追踪和回滚。每次改动后，都必须编写或更新相关测试，并在交付给用户前，确保所有测试和验证全部通过。'));
 });
 
-test('handoff marks M0-T1 pending and requires real desktop verification', () => {
+test('handoff marks M0-T1 complete with real desktop verification', () => {
   const plan = docs['IMPLEMENTATION_PLAN.md'];
-  assert.match(plan, /- \[ \] M0-T1：待执行/);
-  assert.doesNotMatch(plan, /- \[x\] M0-T1/);
+  assert.match(plan, /- \[x\] M0-T1：Tauri 桌面应用初始化完成/);
+  assert.doesNotMatch(plan, /- \[ \] M0-T1/);
   assert.match(plan, /cargo check --manifest-path src-tauri\/Cargo.toml/);
   assert.match(plan, /浏览器预览或仅前端构建不能代替桌面启动验收/);
+  assert.match(plan, /构建版与开发版真实 Tauri 窗口 smoke 均通过/);
 });
 
 test('validator rejects a missing original task', () => {

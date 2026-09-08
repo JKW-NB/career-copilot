@@ -1,6 +1,6 @@
 # Career Copilot — Technical Spec V1
 
-基线：2026-09-07，交互补充：2026-09-08。本文约束正式实现；当前仅有 React 浏览器 Demo，无 Tauri、数据库或真实模型连接。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
+基线：2026-09-07，交互与 M0-T1 补充：2026-09-08。本文约束正式实现；当前 React 界面已由 Tauri 2 桌面壳承载，无数据库或真实模型连接。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
 
 Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 和 Proposal。Proposal 包含类型、目标、预期旧值、修改内容与 pending/applied/dismissed 状态；应用在服务内重新检查目标和旧值，过期或重复应用拒绝，失败不发布任何改动。资产描述不冒充 Fact。Confirmed Portfolio 同时保存 requirements 快照；调整重要性或纳入范围后须重新确认，新内容版本不覆盖旧 Ready。聊天上下文是用户选择的本轮快照，发送后仍可回看，刷新/重置清除；Demo 不向外部发送。正式 AI Assistant 复用现有 Gateway 与业务用例，新增事实继续走 Fact Extraction/Review，不另建平行业务系统或聊天数据库。
 
@@ -8,7 +8,7 @@ Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 
 
 AI Side Panel 实现合同：App 保存展开态与当前页面，Assistant 常驻挂载以保留收起后的会话；assistant-context 根据页面/Tab 枚举可编辑目标，点击内容可带入目标，发送时固定目标与上下文快照。FieldTarget 区分 description/bullet/requirement，字段修改经 DemoService 校验旧值和事实准入后写入；descriptions 只保存工作描述，不替代 Fact 或历史快照。Proposal 增加 undone 状态。单步 Undo 保存此次涉及的数据部分，撤销前核对应用后值；有后续修改时拒绝撤销，不触及 Ready/Final/Confirmed 历史。生产化继续复用现有业务用例，不把此内存实现当作数据库方案。
 
-冻结栈：Tauri + React + TypeScript + SQLite + Local File Storage + BYOK AI Gateway。无独立 Node 后端、云服务、队列、账户系统。M0-T1 核验官方兼容要求后固定具体依赖版本及锁文件；原对话没有冻结版本号，不能把安装时的选择描述成已有决策。
+冻结栈：Tauri + React + TypeScript + SQLite + Local File Storage + BYOK AI Gateway。无独立 Node 后端、云服务、队列、账户系统。M0-T1 实际固定 Tauri CLI 2.11.4、tauri 2.11.3、tauri-build 2.6.3、React 19.2.8、TypeScript 7.0.2 与 Rust 1.98.1，并提交 npm/Cargo 锁文件；后续升级单独验证。
 
 ```text
 React UI → Application Services → Career / Job / Resume
@@ -128,7 +128,7 @@ Extract & Forget 在用户确认前保留临时恢复能力，确认后删除应
 
 ## 8. 验证与 M0 边界
 
-目前只提供文档合同测试：`node --test tests/docs.test.mjs`。测试通过只证明规格结构、引用与任务覆盖一致，不证明应用业务已实现。M0-T1 加前端启动/导航测试、类型检查、构建和 Rust 检查；M0-T5 完善统一错误与自动化测试框架，不作为前期免测理由。
+M0-T1 已提供文档与服务单元测试、浏览器流程、类型检查、前端构建、Cargo check/test，以及真实 Tauri/WebView2 的构建版和开发版窗口 smoke。桌面 smoke 连续两轮检查启动、基础导航、AI 面板、示例简历流程、关闭与再次启动；详细命令见 [桌面开发与验收说明](docs/DESKTOP_SETUP.md)。M0-T5 继续完善统一错误与自动化测试框架，不作为前期免测理由。
 
 后续测试重点为 INV-01–08：历史不可变、非法准入拒绝、真实 PDF 绑定、回滚/幂等/重启恢复。模型使用固定结构化 fixture/mock 验证合同与拒绝路径，另做小规模真实 Provider smoke；不逐字断言模型文案。M8 用合成材料验证完整闭环。每个 Task 必须测试并提交，详见工作手册。
 

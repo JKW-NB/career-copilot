@@ -1,6 +1,6 @@
 # Career Copilot — Product Spec V1
 
-基线：2026-09-07；2026-09-08 补充用户反馈。状态：已有浏览器交互 Demo，桌面、持久化与真实 AI 尚未实现。来源及一致性结论见 [一致性检查](docs/CONSISTENCY_CHECK.md)。本文负责产品行为；存储、枚举与执行约束分别见 [TECH_SPEC.md](TECH_SPEC.md)、[WORK_MANUAL.md](WORK_MANUAL.md)、[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
+基线：2026-09-07；2026-09-08 补充用户反馈并完成 M0-T1。状态：已有可启动的 Tauri 桌面应用和浏览器交互 Demo；持久化与真实 AI 尚未实现。来源及一致性结论见 [一致性检查](docs/CONSISTENCY_CHECK.md)。本文负责产品行为；存储、枚举与执行约束分别见 [TECH_SPEC.md](TECH_SPEC.md)、[WORK_MANUAL.md](WORK_MANUAL.md)、[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
 
 ## 1. 目标与范围
 
