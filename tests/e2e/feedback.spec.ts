@@ -51,7 +51,7 @@ test('new assets can be created and found without becoming trusted resume facts'
 
 test('assistant suggests asset creation, editing and dismissal without navigating', async ({ page }) => {
   await page.getByRole('navigation').getByRole('button', { name: /职业资产/ }).click();
-  await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
+  await page.getByRole('switch', { name: 'AI 助手' }).click();
   const panel = page.getByRole('complementary', { name: 'AI 助手面板' });
   await expect(page.getByRole('heading', { name: '职业资产', exact: true })).toBeVisible();
   await panel.getByText('附加上下文（0）').click();
@@ -97,7 +97,7 @@ test('readable type and single overview slogan work on mobile too', async ({ pag
   await expect(page.getByText('让真实经历，成为你的下一步。')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await sidebarLabel.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBe(12);
-  await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
+  await page.getByRole('switch', { name: 'AI 助手' }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: '收起 AI 助手' }).click();
   await page.getByRole('navigation').getByRole('button', { name: /求职工作区/ }).click();

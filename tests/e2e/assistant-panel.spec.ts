@@ -8,12 +8,15 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('opens a docked panel without navigation and keeps conversation when collapsed', async ({ page }) => {
-  const entry = page.getByRole('navigation').getByRole('button', { name: /AI 助手/ });
+  const entry = page.getByRole('switch', { name: 'AI 助手' });
   const panel = page.getByRole('complementary', { name: 'AI 助手面板' });
   await expect(panel).toBeHidden();
+  await expect(entry).not.toBeChecked();
+  await expect(page.getByRole('navigation').getByText('AI 助手')).toHaveCount(0);
+  expect(await entry.evaluate(element => element.closest('.sidebar-bottom') !== null)).toBe(true);
   const before = await page.locator('.workspace').boundingBox();
   await entry.click();
-  await expect(entry).toHaveAttribute('aria-expanded', 'true');
+  await expect(entry).toBeChecked();
   await expect(page.getByRole('heading', { name: '岗位能力要求' })).toBeVisible();
   const workspace = await page.locator('.workspace').boundingBox();
   const bounds = await panel.boundingBox();
@@ -23,6 +26,12 @@ test('opens a docked panel without navigation and keeps conversation when collap
   await panel.getByRole('button', { name: '发送', exact: true }).click();
   await expect(panel.locator('.proposal')).toHaveCount(0);
   await panel.getByRole('button', { name: '收起 AI 助手' }).click();
+  await expect(panel).toBeHidden();
+  await expect(entry).not.toBeChecked();
+  await entry.click();
+  await expect(panel.getByRole('log')).toContainText('这个岗位需要什么能力？');
+  await entry.click();
+  await expect(entry).not.toBeChecked();
   await expect(panel).toBeHidden();
   await entry.click();
   await expect(panel.getByRole('log')).toContainText('这个岗位需要什么能力？');
@@ -37,7 +46,7 @@ test('requires an explicit target then applies and undoes only its bullet', asyn
   const first = page.getByTestId('content-agent').locator('.content-text');
   const second = page.getByTestId('content-research').locator('.content-text');
   const original = await first.innerText(); const untouched = await second.innerText();
-  await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
+  await page.getByRole('switch', { name: 'AI 助手' }).click();
   const panel = page.getByRole('complementary', { name: 'AI 助手面板' });
   await panel.getByRole('button', { name: '重写内容', exact: true }).click();
   await panel.getByRole('button', { name: '发送', exact: true }).click();
@@ -63,7 +72,7 @@ test('project description updates immediately and page switches never retarget o
   const description = asset.locator('.asset-card-top p');
   const original = await description.innerText();
   await asset.getByRole('button', { name: /查看.*详情/ }).click();
-  await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
+  await page.getByRole('switch', { name: 'AI 助手' }).click();
   const panel = page.getByRole('complementary', { name: 'AI 助手面板' });
   await expect(panel.getByLabel('AI 修改目标')).toHaveValue('description:agent');
   await panel.getByRole('button', { name: '重写内容', exact: true }).click();
@@ -80,7 +89,7 @@ test('project description updates immediately and page switches never retarget o
 
 test('narrow screens retain usable content and a visible collapse control', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('navigation').getByRole('button', { name: /AI 助手/ }).click();
+  await page.getByRole('switch', { name: 'AI 助手' }).click();
   const panel = page.getByRole('complementary', { name: 'AI 助手面板' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const rect = await panel.boundingBox();
