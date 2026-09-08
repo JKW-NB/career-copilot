@@ -1,6 +1,6 @@
 # Career Copilot — Product Spec V1
 
-基线：2026-09-07；状态：开发规格，功能尚未实现。来源及一致性结论见 [一致性检查](docs/CONSISTENCY_CHECK.md)。本文负责产品行为；存储、枚举与执行约束分别见 [TECH_SPEC.md](TECH_SPEC.md)、[WORK_MANUAL.md](WORK_MANUAL.md)、[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
+基线：2026-09-07；2026-09-08 补充用户反馈。状态：已有浏览器交互 Demo，桌面、持久化与真实 AI 尚未实现。来源及一致性结论见 [一致性检查](docs/CONSISTENCY_CHECK.md)。本文负责产品行为；存储、枚举与执行约束分别见 [TECH_SPEC.md](TECH_SPEC.md)、[WORK_MANUAL.md](WORK_MANUAL.md)、[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
 
 ## 1. 目标与范围
 
@@ -21,7 +21,11 @@ MVP 必须走通：材料 → Career Assets → Job Strategy → Contribution Po
 
 关系：Experience 1:N Project 1:N Contribution 1:N Fact 1:N Fact Revision；Fact Revision N:M Evidence Version；Content Item N:M Contribution / Fact Revision / Proof Requirement。Contribution 不等于 Bullet，允许一对多和多对一表达。
 
-顶层导航：Home、Career Assets、Job Search、Library、Settings。Home 只汇总可执行待办，不另建 Task Center。Career Assets 提供 Experience / Capability / Evidence 三个视图，默认树展示到 Contribution，Fact 收起。
+顶层导航：Home、AI Assistant、Career Assets、Job Search、Library、Settings。Home 只汇总可执行待办，不另建 Task Center。Career Assets 提供 Experience / Capability / Evidence 三个视图，默认树展示到 Contribution，Fact 收起。
+
+2026-09-08 交互补充（JKai 明确提出）：正文以 15–16px 为阅读基准，辅助文字不小于 13px；只在今日概览保留一句 slogan。职业资产提供显式新增入口；自由描述先存草稿，经过事实抽取/审查才能用于简历。岗位能力显示说明、JD 依据与核心/重要/辅助重要性，用户可新增能力、调整重要性或不纳入本次简历；保留原岗位来源，修改不覆盖历史分析。点击覆盖缺口直接展示原因、补入现有贡献、新增资产、询问助手及保留缺口的操作。
+
+AI Assistant 支持开放提问、选择工作区对象或划选文字作为本轮上下文。修改类回答显示目标和改动前后，用户可应用或放弃；点击应用仍经过业务校验，不能直接确认新事实、改写历史或删除被引用的 Truth。当前 Demo 使用离线示例回复和操作选择器，新增/编辑描述仅为待审查资产草稿；删除限草稿，组合移除保留职业资产和历史。通用回答、真实事实提取/确认与持久化留给后续任务，不把演示功能记为正式 MVP 完成。
 
 具体岗位固定四个 Tab：Strategy（理解）/ Contributions（选材）/ Resume（表达）/ Final（记录）。共享岗位头部、可收起的策略摘要与解释依据的 Context Panel；JD 原文放 Strategy，不增设第五个 Tab。允许返回上游调整，提示下游影响，不强制从头重来。
 

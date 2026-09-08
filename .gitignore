@@ -13,3 +13,7 @@ coverage/
 evidence/
 final-resumes/
 temp/
+.cache/
+test-results/
+playwright-report/
+output/

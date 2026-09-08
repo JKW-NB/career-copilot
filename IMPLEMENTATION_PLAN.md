@@ -9,7 +9,9 @@
 ## 当前状态
 
 - [x] DOCS-BASELINE：四份文档、一致性审查、AGENTS.md、文档测试与 Git 仓库准备。
-- [ ] M0-T1：待执行。此轮仅完成交接准备，没有桌面应用、数据库或 AI 功能。
+- [x] DEMO-T1：前端交互 Demo，验证 Strategy → Portfolio → Resume → Final 的核心流程；仅使用内存合成数据。
+- [x] DEMO-T2：落实六项界面反馈：阅读字号、单一 slogan、上下文 AI 助手与显式应用、资产草稿新增、能力重要性与纳入调整、缺口操作弹窗。AI 为离线交互演示，用户新增内容仅留当前会话。
+- [ ] M0-T1：待执行。Demo 不等于桌面应用；此轮没有数据库或真实 AI 功能。
 
 2026-09-07 环境预检：Git 2.53.0.windows.2、Node v24.11.1 可用；当前 PATH 无 rustc/cargo。该结果仅代表当前命令环境，不能断言机器完全未安装 Rust；M0-T1 先定位或安装工具链并验证桌面 prerequisites。
 
@@ -39,7 +41,7 @@
 
 - [ ] 预检 `git status --short`、`node --version`、`npm --version`、`rustc --version`、`cargo --version`；检查 Windows C++ build tools 与 WebView2。缺失时先定位工具或安装受支持 prerequisites，完成后重跑。
 - [ ] 核验 Tauri 官方脚手架与 React/TypeScript 兼容要求，使用已验证版本建立骨架，保存前端与 Rust 锁文件。若生成器要求空目录，在临时目录生成后只合入骨架文件，不覆盖本仓库文档。
-- [ ] 增加导航行为测试：Home、Career Assets、Job Search、Library、Settings 可选择并正确显示当前页；缺失业务模块显示待开发说明，不伪造可用数据。
+- [ ] 增加导航行为测试：Home、AI Assistant、Career Assets、Job Search、Library、Settings 可选择并正确显示当前页；缺失业务模块显示待开发说明，不伪造可用数据。
 - [ ] 实现最小壳，固定脚本 `npm run dev`、`npm run test`、`npm run typecheck`、`npm run build`、`npm run tauri dev`。test 必须包含现有文档测试与前端行为测试。
 - [ ] 运行 `npm run test`、`npm run typecheck`、`npm run build`、`cargo check --manifest-path src-tauri/Cargo.toml`、`cargo test --manifest-path src-tauri/Cargo.toml`、`git diff --check`；预期全部退出 0。
 - [ ] 实际运行 `npm run tauri dev` 并验证桌面窗口、导航切换、关闭重启无错误。浏览器预览或仅前端构建不能代替桌面启动验收。
@@ -154,3 +156,5 @@
 ## 交付记录
 
 DOCS-BASELINE 的一致性和验证范围记录在 [docs/CONSISTENCY_CHECK.md](docs/CONSISTENCY_CHECK.md)。该改动的 commit 通过 `git log --oneline` 查询，避免在提交自身内容里写无法预知的 hash。M0-T1 及以后每次交付在此追加实际完成状态和验证证据。
+
+2026-09-08 DEMO-T1/T2：此前 Demo 尚未提交，本次一并提交可运行基线及反馈改动。文档、服务、类型、构建和浏览器验证记录见 [FRONTEND_DEMO.md](docs/FRONTEND_DEMO.md)。四份文档统一为“浏览器 Demo 已有，正式桌面/AI/存储未实现”；M0-T1 导航验收包含 AI Assistant，M0-T4 接入其 Gateway，M1/M2 实现资产草稿转事实，M4-T2/T3 实现能力侧重点的正式版本化与可操作缺口，均沿用原 Task 编号。

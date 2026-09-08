@@ -74,3 +74,7 @@
 本轮实际文档测试结果：15 项通过、0 失败、0 跳过（Node v24.11.1）。最终提交前重跑同一命令并执行暂存区 whitespace 检查；提交本身及干净工作区由提交后检查确认。
 
 M0-T1 开工前还需：定位/配置 Rust/Cargo，核验 C++ build tools、WebView2 与所选 Tauri 版本要求；固定依赖版本和锁文件；真正启动桌面窗口。当前环境只验证 Git/Node 可用，未执行应用或 Provider 验证。
+
+## 6. 2026-09-08 Demo 交付补充
+
+上节为文档基线当日记录。本次已有浏览器 Demo，实际验证范围与结果见 [FRONTEND_DEMO.md](FRONTEND_DEMO.md)，并非桌面或 Provider 验证。PRODUCT_SPEC 定义六项用户反馈和 AI Assistant 的显式应用行为；TECH_SPEC 定义 Proposal 旧值校验、原子应用、草稿隔离及 Requirement 快照；WORK_MANUAL 增加相应服务/浏览器回归要求；IMPLEMENTATION_PLAN 记录 DEMO-T1/T2 并保留 M0-T1 未完成。原 INV-01–08、31 表和 53 个正式 Task 不变，生产化沿用 Gateway、Career Review 与 Job Analysis 版本用例。未把离线问答、草稿记录或虚拟文件计为真实 AI、职业事实或投递。

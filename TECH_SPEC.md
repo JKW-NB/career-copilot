@@ -1,6 +1,8 @@
 # Career Copilot — Technical Spec V1
 
-基线：2026-09-07。本文是实现约束，不表示应用或数据库已创建。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
+基线：2026-09-07，交互补充：2026-09-08。本文约束正式实现；当前仅有 React 浏览器 Demo，无 Tauri、数据库或真实模型连接。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
+
+Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 和 Proposal。Proposal 包含类型、目标、预期旧值、修改内容与 pending/applied/dismissed 状态；应用在服务内重新检查目标和旧值，过期或重复应用拒绝，失败不发布任何改动。资产描述不冒充 Fact。Confirmed Portfolio 同时保存 requirements 快照；调整重要性或纳入范围后须重新确认，新内容版本不覆盖旧 Ready。聊天上下文是用户选择的本轮快照，发送后仍可回看，刷新/重置清除；Demo 不向外部发送。正式 AI Assistant 复用现有 Gateway 与业务用例，新增事实继续走 Fact Extraction/Review，不另建平行业务系统或聊天数据库。
 
 ## 1. 架构边界
 
