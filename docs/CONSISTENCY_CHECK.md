@@ -83,10 +83,14 @@
 
 ## 7. Learning Map 一致性补充
 
-2026-09-08 将项目驱动学习纳入工作流。[LEARNING_MAP.md](../LEARNING_MAP.md) 不改变产品范围、技术合同或 Task 顺序；它按当前实施计划建立知识点及全部 53 个正式 Task 的唯一映射。Storage 保持在 M0-T2，避免沿用外部草稿中与本项目不一致的 Milestone 分层。项目落地状态与 JKai 的理解层级分离，Agent 不得因代码存在而代替用户宣称掌握。
+2026-09-09 将 [LEARNING_MAP.md](../LEARNING_MAP.md) 重构为渐进式知识树。它按软件组织、数据可靠性、历史、来源、AI 安全、AI 功能、Retrieval、Workflow、决策、Grounding 与质量十一条知识分支组织，不再维护 Task → 知识编号矩阵或开发日志。项目进度继续由 IMPLEMENTATION_PLAN 记录；项目代码存在与 JKai 的理解状态严格分离。
 
 ## 8. M0-T2 Storage 一致性补充
 
-2026-09-09 完成 M0-T2。PRODUCT_SPEC 将当前产品状态表述为“桌面壳与 SQLite 工作区已存在、演示业务数据尚未持久化”；TECH_SPEC 固定 `app_local_data_dir/workspace`、SQLite 连接、Migration、备份和阶段文件边界；WORK_MANUAL 继续禁止 UI 直写数据库；IMPLEMENTATION_PLAN 标记 M0-T2 完成并将 M0-T3 设为下一项。四份核心文档均未把 Storage 基础误写成业务 Schema、真实 AI、跨设备同步或已完成的便携模式。
+2026-09-09 完成 M0-T2。PRODUCT_SPEC 将当前产品状态表述为“桌面壳与 SQLite 工作区已存在、演示业务数据尚未持久化”；TECH_SPEC 固定 `app_local_data_dir/workspace`、SQLite 连接、Migration、备份和阶段文件边界；WORK_MANUAL 继续禁止 UI 直写数据库；IMPLEMENTATION_PLAN 保留 M0-T2 完成状态。M0-T3 仍是计划中的下一项实现，但开发现已暂停，当前只学习 M0-T1。四份核心文档均未把 Storage 基础误写成业务 Schema、真实 AI、跨设备同步或已完成的便携模式。
 
 [STORAGE.md](STORAGE.md) 记录运行时真实目录、重启身份验证和可迁移性边界。源代码仓库可通过 Git 移动；程序可重新安装；用户工作区当前不会自动跟随设备。未来 Export/Import 必须作为明确 Task 实现和验证，不能靠复制运行中的 SQLite 文件冒充。
+
+## 9. Learning Gate 一致性补充
+
+AGENTS、WORK_MANUAL 与 IMPLEMENTATION_PLAN 统一规定：每个 Task 先只读分析和讲解，讲解后停止；只有 JKai 明确说“可以开始实现”才允许修改文件；实操后将知识补回原知识节点并停止。是否进入下一 Task 只能由 JKai 决定。M0-T1、M0-T2 的代码与完成记录不回滚，作为后续学习材料。

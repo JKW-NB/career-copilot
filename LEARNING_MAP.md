@@ -1,153 +1,181 @@
-# Career Copilot — Learning Map V1
+# Career Copilot — 渐进式知识树
 
-这不是需要提前学完的课程表。Career Copilot 是主线：开发到一个 Task 时，只学习足够理解该 Task 的概念；完成后再用真实代码和测试复盘。本文不改变 [产品范围](PRODUCT_SPEC.md)、[技术合同](TECH_SPEC.md)或[任务顺序](IMPLEMENTATION_PLAN.md)。
+Career Copilot 同时是产品和学习软件工程、架构设计、AI Engineering 的主线。本文件按知识之间的关系组织，不按 Task 排列，也不充当开发日志。项目进度仍记录在 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
 
-## 1. 学习与记录规则
+## 1. 使用方式
 
-理解层级：L1 能解释术语；L2 能说明项目为什么需要它并看懂实现；L3 能比较方案、风险和取舍。默认先到 L2，模块边界、数据模型、Revision/Snapshot、AI 与确定性代码边界、Validation、Provenance 逐步到 L3。
+知识状态只允许由学习过程推进：`未学习`、`学习中`、`已讲解，待确认`、`JKai 已确认`、`待复习`。代码已经存在不等于 JKai 已经理解，Agent 不得自动填写“我的理解”。
 
-项目状态与个人理解分开记录：`[ ]` 尚未在项目落地，`[~]` 当前 Task 正在落地，`[x]` 已有代码/测试证据。`[x]` 只证明项目使用过该概念，不证明 JKai 已掌握；理解层级由 JKai 自评或通过复述与方案比较确认。
-
-每个 Task 严格按三段执行：
-
-1. **先讲解**：只读了解现状后，Agent 在任何修改前向 JKai 简单介绍映射概念、为什么需要、将在哪里落地及目标层级，不展开无关底层原理。
-2. **再实操**：编写测试、实现最小改动并完成验证。除非涉及产品或架构决策，不把课前说明变成额外审批关卡；JKai 可随时追问或打断。
-3. **后复盘并写入**：Agent 向 JKai 说明代码与测试落点及关键取舍，并将可核验记录追加到本文“Task 复盘记录”。没有通过验收时记录阻塞，不标完成。
-
-每个知识点最终回答五件事：它是什么；项目为什么需要；当前目标层级；落在什么代码/测试；是否有真实实现证据。
-
-## 2. 知识地图
-
-| ID | 知识点 | Career Copilot 为什么需要 | 目标 | 项目状态与证据 | 理解 |
-| --- | --- | --- | --- | --- | --- |
-| F1 | Frontend / Application / Storage 边界 | UI、业务规则和持久化需要独立演进，UI 不能直写数据库 | L3 | [x] `src/app/`、`src/application/demo-service.ts`、TECH 架构边界 | 待自评 |
-| F2 | Tauri 桌面模型 | React 负责界面，Tauri 提供可信桌面容器与本地能力边界 | L2 | [x] `src-tauri/`、原生窗口 smoke | 待自评 |
-| F3 | React 组件与状态 | 页面、Tab、侧栏和确认流程需要可组合的交互状态 | L2 | [x] `src/app/`、Vitest 与 Playwright 流程 | 待自评 |
-| F4 | TypeScript 数据契约 | 模块间对象、枚举和结果需要在编译期明确 | L2 | [x] `src/domain/types.ts`、`npm run typecheck` | 待自评 |
-| F5 | 测试层次 | 小规则、模块组合和真实用户流程需要不同粒度的证据 | L2 | [x] 文档/单元/浏览器/桌面 smoke | 待自评 |
-| S1 | SQLite 与 CRUD | Career Truth、版本和投递记录必须跨重启保存 | L2 | [x] M0-T2 Storage 基础；业务 CRUD 待 M1 起 | 待自评 |
-| S2 | Primary / Foreign Key | 保证 Fact、Contribution、Evidence 等归属与引用有效 | L2 | [x] M0-T2 每连接强制 FK；业务关系待 M1 | 待自评 |
-| S3 | Migration | 新版本软件必须安全升级旧数据库 | L2 | [x] M0-T2 顺序迁移、回滚和升级前备份 | 待自评 |
-| S4 | Transaction / Atomicity | 多步写入失败时不能留下半套业务状态 | L3 | [x] M0-T2 迁移事务；业务事务待后续 Task | 待自评 |
-| S5 | File metadata / Hash / Recovery | 文件内容在文件系统，数据库保存路径、hash 与状态；双写失败可恢复 | L2 | [x] M0-T2 阶段文件与启动恢复；hash/元数据待 M1-T3/M7 | 待自评 |
-| S6 | Secure credential storage | API Key 不能进入数据库、源码、日志或普通前端状态 | L2 | [ ] M0-T4 | 待自评 |
-| D1 | Entity / Relationship / 1:N / N:M | 将现实经历建成 Experience → Project → Contribution → Fact | L3 | [ ] M1 | 待自评 |
-| D2 | Revision / Snapshot | 事实变化与某时刻的完整决策是两种不同版本问题 | L3 | [ ] M1-T2 起 | 待自评 |
-| D3 | Immutable history | 已确认内容和真实投递不能随当前数据更新而变化 | L3 | [ ] M1/M5/M6/M7 | 待自评 |
-| D4 | Provenance | Resume Claim 必须追溯到 Fact Revision、Contribution 与 Evidence | L3 | [ ] M1-T4/M6 | 待自评 |
-| D5 | Archive / safe refactor | 删除、移动、合并资产不能破坏历史引用链 | L3 | [ ] M1-T1/T6 | 待自评 |
-| A1 | Structured Output / JSON Schema | 模型输出必须先成为可校验的数据结构 | L3 | [ ] M0-T4/M2 | 待自评 |
-| A2 | Schema vs Business Validation | JSON 合法不代表 ID、状态、权限和事实准入合法 | L3 | [ ] M0-T3/T4/M2 | 待自评 |
-| A3 | Draft → Validate → Commit | AI 只能提案，确定性代码负责约束后提交 | L3 | [x] Demo Proposal 已示范；正式实现待 M0-T3/T4/M2 | 待自评 |
-| A4 | Retry / Idempotency / Recovery | AI、导入或文件失败不能损坏已确认数据或重复写入 | L2 | [ ] M0-T4/M2/M8 | 待自评 |
-| A5 | State machine | Interview、Import、Analysis 等流程需要合法状态迁移 | L2 | [ ] M2/M3/M4 | 待自评 |
-| A6 | Truth / Derived Data / Confidence | AI 推断能力与用户事实分离，confidence 不等于 verified | L3 | [ ] M2/M3 | 待自评 |
-| A7 | Prompt Contract | 每个 AI Task 固定 Task、Context、Allowed/Forbidden、Schema | L3 | [ ] M0-T4/M2-M6 | 待自评 |
-| A8 | Context Engineering / Retrieval | 只给模型当前任务所需的最小、相关、可追溯上下文 | L3 | [ ] M0-T4/M4 | 待自评 |
-| A9 | Explainability | 用事实和缺口解释判断，不输出无依据的总匹配分 | L3 | [x] Demo UI 已示范；正式数据待 M4 | 待自评 |
-| P1 | Multi-objective decision | 组合需同时平衡覆盖、影响、证据、差异化、冗余和篇幅 | L2 | [ ] M5 | 待自评 |
-| P2 | Marginal value / Coverage | 单项很强不等于加入当前组合仍有增量价值 | L3 | [ ] M5 | 待自评 |
-| R1 | Constrained generation / Grounding | Resume 生成只能使用 Confirmed Portfolio 与 Allowed Facts | L3 | [ ] M6 | 待自评 |
-| R2 | Diff / Local regeneration | 区分改文案与改事实，局部修改不应重生成整份内容 | L2 | [x] Demo 局部 Proposal 已示范；正式实现待 M6 | 待自评 |
-| R3 | Version lineage / Historical record | Master、岗位版本和最终文件需要可比较的父子关系 | L3 | [ ] M6-T7/M7 | 待自评 |
-| Q1 | Observability | 错误状态、日志和 AI run metadata 支撑诊断与恢复 | L2 | [ ] M0-T5/M8 | 待自评 |
-| Q2 | Privacy / minimum retention | 个人材料、Prompt Context 和临时全文必须最小化留存 | L3 | [ ] M0-T4/M1-T3/M3/M8 | 待自评 |
-
-## 3. Task → Learning 映射
-
-本表是 Task 的 `Learning` 字段。`IMPLEMENTATION_PLAN.md` 继续只承载范围与验收，避免在两处重复维护概念说明。
-
-| Task | 开工前重点 |
-| --- | --- |
-| M0-T1 | F1, F2, F3, F4, F5 |
-| M0-T2 | S1, S2, S3, S4, S5, F1 |
-| M0-T3 | F1, F4, A2, A3, S4 |
-| M0-T4 | A1, A2, A3, A4, A7, A8, S6, Q2 |
-| M0-T5 | F5, A4, Q1 |
-| M1-T1 | D1, S2, D5, S4 |
-| M1-T2 | D1, D2, D3, S2, S4, A6 |
-| M1-T3 | S5, D2, D3, Q2, A4 |
-| M1-T4 | D4, S2, D3 |
-| M1-T5 | F1, D1, D4, A6 |
-| M1-T6 | D5, D3, S2, S4 |
-| M2-T1 | A4, A5, S4, S5 |
-| M2-T2 | A1, A2, A3, A7, A8 |
-| M2-T3 | A1, A2, A3, A4, D1 |
-| M2-T4 | A1, A2, A3, A6, D4 |
-| M2-T5 | A2, A3, A6, D2, D4 |
-| M2-T6 | A4, A5, Q2, D1 |
-| M3-T1 | A5, A7, A8, Q2 |
-| M3-T2 | A1, A2, A3, A6, D4 |
-| M3-T3 | D1, A6, S2 |
-| M3-T4 | A6, A7, A8, A4 |
-| M3-T5 | A6, A9, F3 |
-| M4-T1 | D1, S5, Q2 |
-| M4-T2 | A1, A2, A6, A7, A8, A9, D2 |
-| M4-T3 | A9, F3, A6 |
-| M4-T4 | A5, A7, A8, Q2 |
-| M4-T5 | D2, D3, S5, A4 |
-| M4-T6 | D1, D2, D3, A8 |
-| M5-T1 | P1, P2, A7, A8, A9 |
-| M5-T2 | D1, S2, D4, P2 |
-| M5-T3 | D2, D4, A2, R1 |
-| M5-T4 | P1, P2, D2, D3 |
-| M5-T5 | P1, P2, A9, D3 |
-| M5-T6 | S4, A2, A4, D2, D3 |
-| M6-T1 | R1, D4, A1, A2, A7 |
-| M6-T2 | F3, R1, P1, D4 |
-| M6-T3 | R1, R2, D4, D2 |
-| M6-T4 | R2, A2, A3, D4 |
-| M6-T5 | R1, D4, A2 |
-| M6-T6 | F3, Q2, D3 |
-| M6-T7 | D2, D3, R3, S4 |
-| M7-T1 | S5, S4, D3, A4 |
-| M7-T2 | D1, S5, R3 |
-| M7-T3 | D3, S4, S2, R3 |
-| M7-T4 | D3, D5, S2, S4 |
-| M7-T5 | D4, R3, F3 |
-| M7-T6 | R3, D2, D3, D4 |
-| M8-T1 | F5, A4, A5, Q2 |
-| M8-T2 | F5, A2, D4, R1, P2 |
-| M8-T3 | F5, S5, D3, R3 |
-| M8-T4 | F5, A4, S4, Q1, Q2 |
-| M8-T5 | F5, A1, A7, Q1 |
-| M8-T6 | F5, Q1, Q2, F1 |
-
-## 4. 当前学习入口：M0-T3
-
-下一项不是泛学数据库，而是围绕 F1、F4、A2、A3、S4：Application Service 怎样把 UI 意图转换为受约束用例；为什么前端传来的“已验证”标志仍不可信；类型合同、业务校验和事务边界如何组合；怎样让 Demo Service 逐步替换为正式服务，而不把规则散落到 UI。
-
-暂不展开 SQLite B-Tree、Rust 所有权细节、React Fiber、完整 RAG、Agent 框架或 Fine-tuning。只有简单筛选无法稳定检索上下文、单次受约束 AI Task 无法完成多步工具流程，或 Prompt/Context/Few-shot/Evaluation 在高质量数据上仍不稳定时，再分别评估 RAG、Agent 或 Fine-tuning。
-
-## 5. Task 完成后的复盘模板
+每次只展开当前 Task 必需的节点：讲解前保留最小目录；讨论和实操后，再将知识正文、Career Copilot 实例、设计取舍及 JKai 自评补回同一节点。默认深度是能理解并解释项目为什么这样设计；核心架构概念逐步达到能比较方案。除非影响当前理解，不主动深入 SQLite B-Tree、React Fiber、Rust 所有权底层、Transformer 数学、微服务、CQRS 或复杂 Agent Framework。
 
 ```text
-Task:
-涉及知识点：
-代码与测试证据：
-关键取舍：为什么采用当前方案？替代方案的代价是什么？
-JKai 自评：L1 / L2 / L3 / 待复习
-下一次需要补深的内容：
+Career Copilot
+├─ 1. 软件整体如何组织
+├─ 2. 数据如何可靠保存
+├─ 3. 数据为什么需要历史
+├─ 4. 信息从哪里来
+├─ 5. AI 如何安全进入业务系统
+├─ 6. AI 功能如何设计
+├─ 7. Retrieval / RAG
+├─ 8. Workflow / State Machine / Agent
+├─ 9. Multi-objective Decision / Marginal Value
+├─ 10. Grounding / Constrained Generation
+└─ 11. Testing / Reliability / Privacy
 ```
 
-## 6. Task 复盘记录
+## 2. 知识树
 
-复盘按 Task 追加，不重写历史。`JKai 自评` 默认“待自评”，只有 JKai 明确表达理解程度时才更新。
+### 1. 软件整体如何组织
 
-### M0-T1 — Desktop Application Shell（2026-09-08）
+| 知识节点 | 状态 | 为什么 Career Copilot 需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Frontend | 学习中（M0-T1） | 承载用户看到和操作的工作区，但不能拥有数据库与核心业务规则 | UI、交互状态、事件、展示层边界 |
+| └─ React | 学习中（M0-T1） | 将复杂页面拆成可组合组件，并让界面随状态更新 | Component、Props、State、Hook、渲染 |
+| └─ TypeScript | 学习中（M0-T1） | 明确前端数据和函数合同，尽早发现类型错误 | Type、Interface、Union、编译期检查 |
+| Desktop Application | 学习中（M0-T1） | 产品需要本地文件、SQLite 和系统凭据等浏览器无法安全直接提供的能力 | 原生进程、WebView、应用生命周期、系统能力 |
+| └─ Tauri | 学习中（M0-T1） | 用 Rust 提供可信桌面边界，同时复用 React 界面 | Rust Core、WebView、Command、Capability |
+| Module | 学习中（M0-T1） | 把界面、业务、AI、存储拆成职责清楚的部分 | 职责、依赖方向、封装、组合 |
+| Interface / Contract | 学习中（M0-T1） | 让模块通过明确输入输出协作，避免彼此依赖内部细节 | API、类型合同、调用边界、错误合同 |
+| Application Service | 未学习 | 将 UI 意图转换成受业务规则约束的用例 | Use Case、命令、校验、事务边界 |
+| Build Toolchain | 学习中（M0-T1） | 把 TypeScript、React 和 Rust 组合成可运行、可分发的桌面程序 | npm、Vite、Cargo、lockfile、build/dev |
 
-- 涉及知识点：F1、F2、F3、F4、F5。
-- 代码与测试证据：`src-tauri/` 提供 Tauri 桌面容器和最小权限；`src/app/` 保持 React UI；`tests/desktop/smoke.mjs` 在构建版和开发版真实 WebView2 中各验证两轮启动、导航、AI 面板、关闭和重启。
-- 关键取舍：复用已经过浏览器验收的 React Demo，由 Tauri 只承担桌面边界；没有在 M0-T1 提前加入 SQLite、文件插件或 AI Provider，避免桌面初始化与业务持久化耦合。
-- 项目状态：已实现并通过验证。
-- JKai 自评：待自评。
-- 下一次需要补深：M0-T2 通过真实 Storage 命令理解 F1 与 S1–S5。
+### 2. 数据如何可靠保存
 
-### M0-T2 — Storage Foundation（2026-09-09）
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Data Model | 未学习 | 把经历、贡献、事实和证据变成稳定结构 | Entity、Attribute、Relationship、Constraint |
+| Relational Database / SQLite | 未学习 | 本地保存结构化职业数据并支持可靠查询 | Table、Row、SQL、CRUD、Index 基础 |
+| Primary Key / Foreign Key | 未学习 | 保证对象身份和关联有效 | 唯一标识、引用完整性、1:N、N:M |
+| Transaction | 未学习 | 一次业务操作修改多条数据时不能只成功一半 | Atomicity、Commit、Rollback |
+| Migration | 未学习 | 新版程序必须安全升级旧数据库 | Schema Version、顺序迁移、回滚、升级前备份 |
+| File Storage | 未学习 | PDF、DOCX 和证据文件不适合直接存入 SQLite BLOB | 文件目录、元数据、阶段写入、恢复 |
 
-- 涉及知识点：S1、S2、S3、S4、S5、F1。
-- 代码与测试证据：`src-tauri/src/storage/` 负责目录、连接、Migration、备份和阶段文件；`src-tauri/migrations/0001_storage.sql` 建立内部 workspace identity；`src-tauri/tests/storage_contract.rs` 覆盖 7 个持久化/失败场景；`src/infrastructure/storage.ts` 与 `get_storage_info` 构成只读 UI 边界；真实桌面测试确认 `app.db` 存在且两次进程启动的 workspace ID 相同。
-- 关键取舍：使用 Rust `rusqlite` 与受信任 Tauri Command，而不是允许 React 通过 SQL 插件直连数据库；工作区放在 `app_local_data_dir/workspace`，将可迁移数据与 `EBWebView` 缓存分离；只建立内部迁移元数据，不提前创建后续业务表。
-- 项目状态：Storage 基础设施已实现并通过验证；现有 Demo 资产仍是内存数据，正式业务写入从 M0-T3/M1 开始。
-- JKai 自评：待自评。
-- 下一次需要补深：M0-T3 用正式 Application Service 理解 F1、F4、A2、A3、S4。
+### 3. 数据为什么需要历史
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Revision | 未学习 | 事实变化时保留旧表达及引用关系 | 追加写、current pointer、supersede |
+| Snapshot | 未学习 | 冻结某次分析、组合或简历使用的完整状态 | 快照边界、引用集合、时间点一致性 |
+| Immutable History | 未学习 | 已确认内容和真实投递不能被后续编辑改写 | 不可变对象、归档、历史保护 |
+| Version Lineage | 未学习 | 说明 Master、岗位版本和最终文件如何演化 | parent、version number、branch、comparison |
+
+### 4. 信息从哪里来
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Evidence | 未学习 | 区分材料中存在的依据与用户或 AI 的主张 | 原始材料、版本、片段、验证状态 |
+| Provenance | 未学习 | 让简历表达可以追溯到事实和证据 | 来源链、审计、claim trace |
+| Source Reference | 未学习 | 精确指出某个事实来自哪份材料的哪个位置 | source ID、snippet、locator |
+| Hash | 未学习 | 识别文件内容、重复项和导出完整性 | SHA-256、内容身份、校验；不等同加密 |
+
+### 5. AI 如何安全进入业务系统
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Structured Output | 未学习 | 将模型自由文本变成程序可检查的数据 | JSON、字段约束、解析失败 |
+| JSON Schema | 未学习 | 用机器可执行规则描述 AI 输出形状 | required、enum、nested object、strictness |
+| Schema Validation | 未学习 | 拒绝缺字段、错类型和非法枚举 | syntax/shape validation、error path |
+| Business Rule Validation | 未学习 | JSON 合法仍不代表事实、ID、状态和权限合法 | invariant、authorization、semantic rule |
+| Draft → Validate → Commit | 未学习 | AI 只能提出建议，用户和确定性代码决定是否写入 | draft isolation、review、commit、rejection |
+
+### 6. AI 功能如何设计
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Prompt Contract | 未学习 | 固定模型任务、上下文、允许动作和输出格式 | Task、Context、Allowed/Forbidden、Output Schema |
+| Context Engineering | 未学习 | 给模型足够且相关的信息，避免混入无关历史 | context selection、ordering、budget |
+| Minimum Necessary Context | 未学习 | 降低隐私暴露、成本和无关信息干扰 | relevance、redaction、retention |
+| Retry / Recovery | 未学习 | 模型超时或输出非法时不能损坏已提交数据 | bounded retry、idempotency、failure state |
+| Confidence vs Verification | 未学习 | 模型自信程度不能替代证据或用户确认 | probability signal、evidence、verified state |
+
+### 7. Retrieval / RAG
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Retrieval | 未学习 | 从大量职业资产中选出当前任务真正相关的内容 | filtering、ranking、query、recall/precision |
+| RAG | 未学习 | 当简单结构化查询不足时，把检索结果作为模型上下文 | chunk、embedding、vector search、grounded answer |
+
+### 8. Workflow / State Machine / Agent
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Workflow | 未学习 | 导入、访谈、分析和投递都由多个有顺序的步骤组成 | step、input/output、pause/resume、failure |
+| State Machine | 未学习 | 限制对象只能发生合法状态变化 | state、transition、guard、terminal state |
+| Agent | 未学习 | 只有需要模型自主选择多步工具时才评估引入 | planning、tool use、loop、stop condition |
+
+### 9. Multi-objective Decision / Marginal Value
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Multi-objective Decision | 未学习 | 贡献组合需同时考虑覆盖、证据、影响、差异化和篇幅 | objective、constraint、trade-off、Pareto 基础 |
+| Marginal Value | 未学习 | 一个强项目加入已有组合后未必仍提供新价值 | incremental gain、redundancy、coverage |
+
+### 10. Grounding / Constrained Generation
+
+| 知识节点 | 状态 | 为什么以后可能需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Grounding | 未学习 | 简历内容必须有允许使用的事实依据 | source-bound claim、citation chain、unsupported claim |
+| Constrained Generation | 未学习 | 限制模型只能改写和组合已授权事实 | allowed facts、forbidden mutation、omission over invention |
+
+### 11. Testing / Reliability / Privacy
+
+| 知识节点 | 状态 | 为什么 Career Copilot 需要 | 需要掌握的子概念 |
+| --- | --- | --- | --- |
+| Testing Layers | 学习中（M0-T1） | 分别验证小规则、模块组合、浏览器流程和真实桌面运行 | unit、integration、E2E、desktop smoke |
+| Reliability | 未学习 | 失败不能损坏职业事实、历史版本或最终文件 | failure mode、recovery、idempotency、observability |
+| Privacy | 未学习 | 简历、经历材料和 API Key 都是敏感数据 | local-first、minimum retention、credential storage、deletion |
+
+## 3. 知识节点的渐进填写模板
+
+```text
+## 知识名称
+
+状态：未学习
+
+为什么 Career Copilot 需要：
+一句与当前产品有关的理由。
+
+需要掌握：
+- 子概念
+
+知识正文：
+待真正学到这里时补充。
+
+Career Copilot 实例：
+待实操或阅读已有实现后补充。
+
+设计取舍与替代方案：
+待讨论或实操后补充。
+
+我的理解：
+待 JKai 自己确认。
+```
+
+## 4. 当前学习范围：M0-T1
+
+本轮只学习 M0-T1，不进入 M0-T2。知识层级是：
+
+```text
+可运行的桌面应用
+├─ 界面层
+│  ├─ Frontend
+│  ├─ React
+│  └─ TypeScript
+├─ 桌面容器
+│  ├─ Desktop Application
+│  └─ Tauri：Rust Core + WebView + Capability
+├─ 组织边界
+│  ├─ Module
+│  └─ Interface / Contract
+├─ 构建链路
+│  ├─ npm / Vite
+│  └─ Cargo / lockfile
+└─ 验证层次
+   ├─ unit / typecheck / build
+   ├─ browser E2E
+   └─ native desktop smoke
+```
+
+当前学习材料：`src/main.tsx`、`src/app/`、`src/domain/`、`src/application/demo-service.ts`、`src-tauri/src/main.rs`、`src-tauri/src/lib.rs`、`src-tauri/tauri.conf.json`、`src-tauri/capabilities/default.json`、`package.json`、`Cargo.toml` 与 `tests/desktop/smoke.mjs`。
+
+当前状态：正在进行 M0-T1 第一轮讲解，JKai 尚未确认理解。讲解结束后停止并讨论；不得自动进入 M0-T2 学习或 M0-T3 实现。

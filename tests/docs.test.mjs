@@ -69,30 +69,32 @@ test('all 51 original tasks and two explicit additions retain outputs and accept
   validateTasks(docs['IMPLEMENTATION_PLAN.md'], docs['docs/CONSISTENCY_CHECK.md']);
 });
 
-test('learning map covers every implementation task exactly once', () => {
+test('learning map is a progressive knowledge tree instead of a task matrix', () => {
   const learning = docs['LEARNING_MAP.md'];
-  const mappedTasks = [...learning.matchAll(/^\| (M\d+-T\d+) \|/gm)].map(match => match[1]);
-  assert.equal(mappedTasks.length, new Set(mappedTasks).size, 'duplicate learning task mapping');
-  assert.deepEqual([...mappedTasks].sort(), [...expectedTasks].sort(), 'learning task coverage changed');
-  assert.match(learning, /项目状态与个人理解分开记录/);
-  assert.match(learning, /下一项不是泛学数据库/);
+  for (const branch of [
+    '软件整体如何组织', '数据如何可靠保存', '数据为什么需要历史', '信息从哪里来',
+    'AI 如何安全进入业务系统', 'AI 功能如何设计', 'Retrieval / RAG',
+    'Workflow / State Machine / Agent', 'Multi-objective Decision / Marginal Value',
+    'Grounding / Constrained Generation', 'Testing / Reliability / Privacy',
+  ]) assert.match(learning, new RegExp(branch.replaceAll('/', '\\/')));
+  assert.doesNotMatch(learning, /^\| M\d+-T\d+ \|/m);
+  assert.match(learning, /代码已经存在不等于 JKai 已经理解/);
+  assert.match(learning, /我的理解：\n待 JKai 自己确认/);
 });
 
-test('learning workflow requires teach, practice, recap and persisted evidence in order', () => {
+test('learning gate stops after teaching until JKai authorizes implementation', () => {
   const agents = docs['AGENTS.md'];
   const manual = docs['WORK_MANUAL.md'];
   const plan = docs['IMPLEMENTATION_PLAN.md'];
   const learning = docs['LEARNING_MAP.md'];
-  assert.match(agents, /先讲解 → 再实操 → 后复盘并写入/);
-  assert.match(manual, /完成这一步前不得修改代码或业务文档；只读检查可以提前进行/);
-  assert.match(plan, /课前说明之前不得修改代码或业务文档/);
-  const teach = learning.indexOf('**先讲解**');
-  const practice = learning.indexOf('**再实操**');
-  const recap = learning.indexOf('**后复盘并写入**');
-  assert.ok(teach >= 0 && teach < practice && practice < recap, 'learning phases are missing or out of order');
-  assert.match(learning, /## 6\. Task 复盘记录/);
-  assert.match(learning, /### M0-T1 — Desktop Application Shell/);
-  assert.match(learning, /JKai 自评：待自评/);
+  for (const text of [agents, manual, plan]) {
+    assert.match(text, /可以开始实现/);
+    assert.match(text, /停止/);
+  }
+  assert.match(manual, /概念是什么、为什么项目需要、不采用会怎样、与相近概念的区别、当前代码对应哪里/);
+  assert.match(plan, /不得自动衔接下一 Task/);
+  assert.match(learning, /当前学习范围：M0-T1/);
+  assert.match(learning, /不得自动进入 M0-T2 学习或 M0-T3 实现/);
 });
 
 test('seven Features and eight invariants have actual implementation/test mappings', () => {
