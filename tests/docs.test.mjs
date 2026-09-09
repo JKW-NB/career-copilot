@@ -78,6 +78,23 @@ test('learning map covers every implementation task exactly once', () => {
   assert.match(learning, /下一项不是泛学数据库/);
 });
 
+test('learning workflow requires teach, practice, recap and persisted evidence in order', () => {
+  const agents = docs['AGENTS.md'];
+  const manual = docs['WORK_MANUAL.md'];
+  const plan = docs['IMPLEMENTATION_PLAN.md'];
+  const learning = docs['LEARNING_MAP.md'];
+  assert.match(agents, /先讲解 → 再实操 → 后复盘并写入/);
+  assert.match(manual, /完成这一步前不得修改代码或业务文档；只读检查可以提前进行/);
+  assert.match(plan, /课前说明之前不得修改代码或业务文档/);
+  const teach = learning.indexOf('**先讲解**');
+  const practice = learning.indexOf('**再实操**');
+  const recap = learning.indexOf('**后复盘并写入**');
+  assert.ok(teach >= 0 && teach < practice && practice < recap, 'learning phases are missing or out of order');
+  assert.match(learning, /## 6\. Task 复盘记录/);
+  assert.match(learning, /### M0-T1 — Desktop Application Shell/);
+  assert.match(learning, /JKai 自评：待自评/);
+});
+
 test('seven Features and eight invariants have actual implementation/test mappings', () => {
   const matrix = docs['docs/CONSISTENCY_CHECK.md'];
   for (let number = 1; number <= 7; number++) {

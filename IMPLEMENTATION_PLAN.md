@@ -20,7 +20,7 @@
 
 每个表格行是一个 Task，包含目标、文件落点和可观察验收；不是让 Agent 一次实现整张表。目录是建议落点，按实际骨架细化，不预先建立大量空文件。进入 Task 时将该行细化为最小变更与测试；每次完成后在文末交付记录新增状态、实际验证和 commit，可使用新行保留历史。
 
-固定步骤：读取输入与该 Task 的 [Learning 映射](LEARNING_MAP.md#3-task--learning-映射) → 开工前用当前项目解释核心概念 → 写/更新关键行为测试 → 实现 → 运行所有相关检查 → 验证失败路径 → 用真实代码复盘并更新 Learning 状态 → 更新文档与状态 → Git commit。主测试优先放在对应模块旁；跨模块/恢复测试放 `tests/integration/`，端到端放 `tests/e2e/`。
+固定步骤：只读检查输入与该 Task 的 [Learning 映射](LEARNING_MAP.md#3-task--learning-映射) → 向 JKai 简单介绍核心知识 → 开始实操并写/更新关键行为测试 → 实现 → 运行所有相关检查 → 验证失败路径 → 向 JKai 复盘 → 将代码、测试、取舍写入 [Task 复盘记录](LEARNING_MAP.md#6-task-复盘记录) → 更新文档与状态 → Git commit。课前说明之前不得修改代码或业务文档。主测试优先放在对应模块旁；跨模块/恢复测试放 `tests/integration/`，端到端放 `tests/e2e/`。
 
 ## M0 — Project Foundation
 
