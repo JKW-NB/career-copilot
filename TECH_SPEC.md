@@ -1,6 +1,6 @@
 # Career Copilot — Technical Spec V1
 
-基线：2026-09-07，交互与 M0-T1 补充：2026-09-08。本文约束正式实现；当前 React 界面已由 Tauri 2 桌面壳承载，无数据库或真实模型连接。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
+基线：2026-09-07，交互与 M0-T1 补充：2026-09-08，Storage 基础补充：2026-09-09。本文约束正式实现；当前 React 界面已由 Tauri 2 桌面壳承载，SQLite 工作区和迁移机制已经建立，但演示资产仍未接入数据库，真实模型也未连接。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
 
 Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 和 Proposal。Proposal 包含类型、目标、预期旧值、修改内容与 pending/applied/dismissed 状态；应用在服务内重新检查目标和旧值，过期或重复应用拒绝，失败不发布任何改动。资产描述不冒充 Fact。Confirmed Portfolio 同时保存 requirements 快照；调整重要性或纳入范围后须重新确认，新内容版本不覆盖旧 Ready。聊天上下文是用户选择的本轮快照，发送后仍可回看，刷新/重置清除；Demo 不向外部发送。正式 AI Assistant 复用现有 Gateway 与业务用例，新增事实继续走 Fact Extraction/Review，不另建平行业务系统或聊天数据库。
 
@@ -118,7 +118,7 @@ Gateway 概念接口 `generateStructured(task, context, schema, modelPreference)
 
 ## 7. 文件、隐私及失败恢复
 
-应用数据使用操作系统 App data 目录：`app.db`、`evidence/`、`final-resumes/`、`temp/`。SQLite 只存路径/hash/元数据及必要解析内容，不存 PDF/DOCX BLOB。所有路径由 Storage 生成、限制在应用目录；不信任上传文件名作为路径。证据使用独立 version 路径，不能覆盖旧文件。
+应用数据根目录使用 Tauri `app_local_data_dir/workspace/`：`app.db`、`evidence/`、`final-resumes/`、`temp/`。独立子目录避免把 WebView 缓存混入数据工作区；实际位置由受信任命令返回。SQLite 只存路径/hash/元数据及必要解析内容，不存 PDF/DOCX BLOB。所有路径由 Storage 生成、限制在工作区；不信任上传文件名作为路径。证据使用独立 version 路径，不能覆盖旧文件。当前未实现跨设备 Export/Import、云同步或便携模式；源代码可通过 Git 移动，用户工作区不能被描述为已自动便携。
 
 Extract & Forget 在用户确认前保留临时恢复能力，确认后删除应用副本及完整解析缓存，仅保留 hash、文件名、来源位置与最小相关片段。清理失败标记待处理并重试，不宣称已删除。INTERVIEW 默认只留可恢复最小状态和事实片段，完成后清除临时完整上下文；只有明确 opt-in 才存 full_transcript_json。
 

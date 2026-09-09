@@ -105,3 +105,12 @@ test('readable type and single overview slogan work on mobile too', async ({ pag
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
+
+test('settings explains browser storage without pretending it is persistent', async ({ page }) => {
+  await page.getByRole('button', { name: '设置与演示说明' }).click();
+
+  await expect(page.getByRole('heading', { name: '设置与数据' })).toBeVisible();
+  await expect(page.locator('.breadcrumbs strong')).toHaveText('设置与数据');
+  await expect(page.getByTestId('storage-path')).toHaveText('浏览器演示不创建本地数据目录');
+  await expect(page.getByText('现有演示资产仍保留在页面内存中')).toBeVisible();
+});

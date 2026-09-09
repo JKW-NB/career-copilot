@@ -25,11 +25,11 @@
 | F3 | React 组件与状态 | 页面、Tab、侧栏和确认流程需要可组合的交互状态 | L2 | [x] `src/app/`、Vitest 与 Playwright 流程 | 待自评 |
 | F4 | TypeScript 数据契约 | 模块间对象、枚举和结果需要在编译期明确 | L2 | [x] `src/domain/types.ts`、`npm run typecheck` | 待自评 |
 | F5 | 测试层次 | 小规则、模块组合和真实用户流程需要不同粒度的证据 | L2 | [x] 文档/单元/浏览器/桌面 smoke | 待自评 |
-| S1 | SQLite 与 CRUD | Career Truth、版本和投递记录必须跨重启保存 | L2 | [ ] M0-T2 | 待自评 |
-| S2 | Primary / Foreign Key | 保证 Fact、Contribution、Evidence 等归属与引用有效 | L2 | [ ] M0-T2/M1 | 待自评 |
-| S3 | Migration | 新版本软件必须安全升级旧数据库 | L2 | [ ] M0-T2 | 待自评 |
-| S4 | Transaction / Atomicity | 多步写入失败时不能留下半套业务状态 | L3 | [ ] M0-T2 起 | 待自评 |
-| S5 | File metadata / Hash / Recovery | 文件内容在文件系统，数据库保存路径、hash 与状态；双写失败可恢复 | L2 | [ ] M0-T2/M1-T3/M7 | 待自评 |
+| S1 | SQLite 与 CRUD | Career Truth、版本和投递记录必须跨重启保存 | L2 | [x] M0-T2 Storage 基础；业务 CRUD 待 M1 起 | 待自评 |
+| S2 | Primary / Foreign Key | 保证 Fact、Contribution、Evidence 等归属与引用有效 | L2 | [x] M0-T2 每连接强制 FK；业务关系待 M1 | 待自评 |
+| S3 | Migration | 新版本软件必须安全升级旧数据库 | L2 | [x] M0-T2 顺序迁移、回滚和升级前备份 | 待自评 |
+| S4 | Transaction / Atomicity | 多步写入失败时不能留下半套业务状态 | L3 | [x] M0-T2 迁移事务；业务事务待后续 Task | 待自评 |
+| S5 | File metadata / Hash / Recovery | 文件内容在文件系统，数据库保存路径、hash 与状态；双写失败可恢复 | L2 | [x] M0-T2 阶段文件与启动恢复；hash/元数据待 M1-T3/M7 | 待自评 |
 | S6 | Secure credential storage | API Key 不能进入数据库、源码、日志或普通前端状态 | L2 | [ ] M0-T4 | 待自评 |
 | D1 | Entity / Relationship / 1:N / N:M | 将现实经历建成 Experience → Project → Contribution → Fact | L3 | [ ] M1 | 待自评 |
 | D2 | Revision / Snapshot | 事实变化与某时刻的完整决策是两种不同版本问题 | L3 | [ ] M1-T2 起 | 待自评 |
@@ -113,9 +113,9 @@
 | M8-T5 | F5, A1, A7, Q1 |
 | M8-T6 | F5, Q1, Q2, F1 |
 
-## 4. 当前学习入口：M0-T2
+## 4. 当前学习入口：M0-T3
 
-下一项不是泛学数据库，而是围绕一次真实持久化实现理解 S1–S5 与 F1：SQLite 保存什么；外键怎样保护关系；Migration 怎样升级旧库；Transaction 怎样避免半套数据；文件与数据库双写为什么需要恢复；UI 为什么只经受信任命令访问 Storage。
+下一项不是泛学数据库，而是围绕 F1、F4、A2、A3、S4：Application Service 怎样把 UI 意图转换为受约束用例；为什么前端传来的“已验证”标志仍不可信；类型合同、业务校验和事务边界如何组合；怎样让 Demo Service 逐步替换为正式服务，而不把规则散落到 UI。
 
 暂不展开 SQLite B-Tree、Rust 所有权细节、React Fiber、完整 RAG、Agent 框架或 Fine-tuning。只有简单筛选无法稳定检索上下文、单次受约束 AI Task 无法完成多步工具流程，或 Prompt/Context/Few-shot/Evaluation 在高质量数据上仍不稳定时，再分别评估 RAG、Agent 或 Fine-tuning。
 
@@ -142,3 +142,12 @@ JKai 自评：L1 / L2 / L3 / 待复习
 - 项目状态：已实现并通过验证。
 - JKai 自评：待自评。
 - 下一次需要补深：M0-T2 通过真实 Storage 命令理解 F1 与 S1–S5。
+
+### M0-T2 — Storage Foundation（2026-09-09）
+
+- 涉及知识点：S1、S2、S3、S4、S5、F1。
+- 代码与测试证据：`src-tauri/src/storage/` 负责目录、连接、Migration、备份和阶段文件；`src-tauri/migrations/0001_storage.sql` 建立内部 workspace identity；`src-tauri/tests/storage_contract.rs` 覆盖 7 个持久化/失败场景；`src/infrastructure/storage.ts` 与 `get_storage_info` 构成只读 UI 边界；真实桌面测试确认 `app.db` 存在且两次进程启动的 workspace ID 相同。
+- 关键取舍：使用 Rust `rusqlite` 与受信任 Tauri Command，而不是允许 React 通过 SQL 插件直连数据库；工作区放在 `app_local_data_dir/workspace`，将可迁移数据与 `EBWebView` 缓存分离；只建立内部迁移元数据，不提前创建后续业务表。
+- 项目状态：Storage 基础设施已实现并通过验证；现有 Demo 资产仍是内存数据，正式业务写入从 M0-T3/M1 开始。
+- JKai 自评：待自评。
+- 下一次需要补深：M0-T3 用正式 Application Service 理解 F1、F4、A2、A3、S4。

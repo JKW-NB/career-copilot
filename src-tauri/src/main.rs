@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-  career_copilot_lib::run();
+    career_copilot_lib::run();
 }

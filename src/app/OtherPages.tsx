@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Archive, ArrowRight, ArrowUpRight, Check, FileCheck2, FileText, FolderOpen, Leaf, LockKeyhole, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import { contributions, facts, getContribution, getFact } from '../demo/fixtures';
+import { loadStorageInfo, type StorageInfo } from '../infrastructure/storage';
 import { Badge, EmptyState, FactStatus, type PageProps } from './shared';
 
 export function Assets({ state, inspect, newAsset, askAssistant }: PageProps) {
@@ -35,5 +36,25 @@ export function Library({ state, inspect, goTab }: PageProps) {
   </div>;
 }
 export function Settings() {
-  return <div className="standalone-page page-enter"><span className="section-overline">DEMO SETTINGS</span><h1>演示设置</h1><p className="muted">这一版用于验证交互与信息组织。</p><div className="settings-list">{[['模型连接', '未连接任何 AI Provider；推荐与改写使用固定场景。'], ['数据保存', '仅保留在当前页面内存中，刷新或重置会恢复示例。'], ['文件与隐私', '不读取或上传个人文件，不保存 API Key。'], ['下一阶段', '完成桌面初始化，再按任务接入真实存储、AI 与文件流程。']].map(([title, detail]) => <div key={title}><strong>{title}</strong><p>{detail}</p></div>)}</div></div>;
+  const [storage, setStorage] = useState<StorageInfo>();
+  const [storageError, setStorageError] = useState(false);
+  useEffect(() => {
+    loadStorageInfo().then(setStorage).catch(() => setStorageError(true));
+  }, []);
+  const storageDetail = storageError
+    ? '本地存储初始化失败，请重新启动应用。'
+    : storage?.kind === 'desktop'
+      ? storage.root
+      : storage?.message ?? '正在读取本地数据位置…';
+  const databaseDetail = storage?.kind === 'desktop'
+    ? `app.db · Schema V${storage.schemaVersion} · Workspace ${storage.workspaceId}`
+    : '桌面版启动后创建 app.db；当前浏览器演示不会写入磁盘。';
+  return <div className="standalone-page page-enter"><span className="section-overline">APP SETTINGS</span><h1>设置与数据</h1><p className="muted">查看桌面工作区位置和当前实现边界。</p><div className="settings-list">
+    <div><strong>应用数据目录</strong><p className="storage-path" data-testid="storage-path">{storageDetail}</p></div>
+    <div><strong>本地数据库</strong><p data-testid="workspace-id">{databaseDetail}</p></div>
+    <div><strong>当前界面数据</strong><p>桌面 Storage 基础设施已经建立；现有演示资产仍保留在页面内存中，M0-T3 后才接入受信任业务命令。</p></div>
+    <div><strong>迁移到其他设备</strong><p>程序可以重新安装，数据不会自动跟随。如需跨设备迁移，需要后续增加受控导出与导入；当前不要直接复制运行中的数据库。</p></div>
+    <div><strong>模型连接</strong><p>未连接任何 AI Provider；推荐与改写仍使用固定场景。</p></div>
+    <div><strong>文件与隐私</strong><p>当前不读取或上传个人文件，也不保存 API Key。</p></div>
+  </div></div>;
 }

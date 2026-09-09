@@ -22,6 +22,7 @@ temporaryServer.listen(0, '127.0.0.1');
 await once(temporaryServer, 'listening');
 const port = temporaryServer.address().port;
 await new Promise(resolve => temporaryServer.close(resolve));
+let persistentWorkspace;
 
 // Only this test child gets a local debugging port. It is never part of app config.
 for (let cycle = 1; cycle <= 2; cycle++) {
@@ -75,7 +76,14 @@ for (let cycle = 1; cycle <= 2; cycle++) {
       await expect(nav).toHaveAttribute('aria-current', 'page');
     }
     await page.getByRole('button', { name: '设置与演示说明' }).click();
-    await expect(page.getByRole('heading', { name: '演示设置' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '设置与数据' })).toBeVisible();
+    const storagePath = await page.getByTestId('storage-path').textContent();
+    const workspace = await page.getByTestId('workspace-id').textContent();
+    assert.ok(storagePath?.endsWith(path.join('com.careercopilot.desktop', 'workspace')), 'Unexpected isolated workspace path: ' + storagePath);
+    assert.ok(existsSync(path.join(storagePath, 'app.db')), 'Desktop database was not created.');
+    assert.match(workspace, /Schema V1 · Workspace [a-f0-9]{32}/);
+    if (persistentWorkspace) assert.equal(workspace, persistentWorkspace, 'Workspace identity changed after restart.');
+    persistentWorkspace = workspace;
     const toggle = page.getByRole('switch', { name: 'AI 助手' });
     await expect(toggle).not.toBeChecked();
     await toggle.click();

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'LEARNING_MAP.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md'];
+const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'LEARNING_MAP.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md', 'docs/STORAGE.md'];
 const docs = Object.fromEntries(names.map(name => [name, readFileSync(resolve(root, name), 'utf8')]));
 const baselineTaskCounts = [5, 5, 6, 5, 5, 6, 7, 6, 6];
 const expectedTasks = baselineTaskCounts.flatMap((count, milestone) =>
@@ -154,6 +154,18 @@ test('handoff marks M0-T1 complete with real desktop verification', () => {
   assert.match(plan, /cargo check --manifest-path src-tauri\/Cargo.toml/);
   assert.match(plan, /浏览器预览或仅前端构建不能代替桌面启动验收/);
   assert.match(plan, /构建版与开发版真实 Tauri 窗口 smoke 均通过/);
+});
+
+test('M0-T2 records the isolated workspace and honest portability boundary', () => {
+  const plan = docs['IMPLEMENTATION_PLAN.md'];
+  const tech = docs['TECH_SPEC.md'];
+  const storage = docs['docs/STORAGE.md'];
+  assert.match(plan, /- \[x\] M0-T2：SQLite Storage/);
+  assert.match(plan, /M0-T2 完成，下一项为 M0-T3/);
+  assert.match(tech, /app_local_data_dir\/workspace/);
+  assert.match(storage, /com\.careercopilot\.desktop\\workspace/);
+  assert.match(storage, /用户工作区还不能像插件一样自动跟随/);
+  assert.match(storage, /直接复制正在运行的 `app\.db`/);
 });
 
 test('validator rejects a missing original task', () => {

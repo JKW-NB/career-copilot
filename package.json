@@ -22,6 +22,7 @@
     "check": "npm run test && npm run typecheck && npm run build && npm run test:e2e"
   },
   "dependencies": {
+    "@tauri-apps/api": "2.11.1",
     "lucide-react": "1.42.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"

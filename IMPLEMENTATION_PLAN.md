@@ -12,6 +12,7 @@
 - [x] DEMO-T1：前端交互 Demo，验证 Strategy → Portfolio → Resume → Final 的核心流程；仅使用内存合成数据。
 - [x] DEMO-T2：落实六项界面反馈：阅读字号、单一 slogan、上下文 AI 助手与显式应用、资产草稿新增、能力重要性与纳入调整、缺口操作弹窗。AI 为离线交互演示，用户新增内容仅留当前会话。
 - [x] M0-T1：Tauri 桌面应用初始化完成；复用现有内存 Demo，尚无数据库或真实 AI。
+- [x] M0-T2：SQLite Storage、工作区目录、迁移/备份和失败恢复完成；演示资产仍为内存数据。
 - [x] DEMO-T3：AI Side Panel 替代独立 AI 页面；当前上下文、明确目标、预览/应用/放弃、单步撤销、收起会话保留及响应式停靠。采用本地示例回复，未接模型或新增后端。
 
 2026-09-07 环境预检：Git 2.53.0.windows.2、Node v24.11.1 可用；当前 PATH 无 rustc/cargo。该结果仅代表当前命令环境，不能断言机器完全未安装 Rust；M0-T1 先定位或安装工具链并验证桌面 prerequisites。
@@ -161,3 +162,5 @@ DOCS-BASELINE 的一致性和验证范围记录在 [docs/CONSISTENCY_CHECK.md](d
 2026-09-08 DEMO-T1/T2：此前 Demo 尚未提交，本次一并提交可运行基线及反馈改动。文档、服务、类型、构建和浏览器验证记录见 [FRONTEND_DEMO.md](docs/FRONTEND_DEMO.md)。四份文档统一为“浏览器 Demo 已有，正式桌面/AI/存储未实现”；M0-T1 导航验收包含 AI Assistant，M0-T4 接入其 Gateway，M1/M2 实现资产草稿转事实，M4-T2/T3 实现能力侧重点的正式版本化与可操作缺口，均沿用原 Task 编号。
 
 2026-09-08 M0-T1：新增 Tauri 2.11.4 + React 桌面壳、Rust 1.98.1 工具链固定、Windows 图标与最小权限配置、原生桌面 smoke 脚本及 [桌面开发与验收说明](docs/DESKTOP_SETUP.md)。Cargo check/test、debug 桌面程序构建、构建版与开发版真实 Tauri 窗口 smoke 均通过；两种模式各连续两轮验证启动、导航、AI 面板、示例简历流程、关闭与再次启动。M0-T1 完成，下一项为 M0-T2 Storage。
+
+2026-09-09 M0-T2：以 `rusqlite 0.40.2` bundled SQLite 实现 [Storage 工作区](docs/STORAGE.md)，默认根目录为 Tauri `app_local_data_dir/workspace`。首次迁移创建内部 workspace identity，不提前创建 31 张业务表；每次连接启用 FK/WAL，迁移逐版本事务执行并在升级前在线备份。受管文件先写 pending 再移动，失败可由启动恢复清理，路径不能逃出工作区。设置页仅通过 `get_storage_info` 显示实际路径；浏览器明确无本地存储。Rust 合同、前端边界、浏览器设置页及真实桌面两轮重启验证通过。M0-T2 完成，下一项为 M0-T3 Application Service。

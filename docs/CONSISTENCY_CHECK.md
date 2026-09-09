@@ -1,6 +1,6 @@
 # 四份核心文档一致性检查
 
-审查日期：2026-09-07；M0-T1 状态复核：2026-09-08。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化已验收，真实数据库与模型仍未实现。
+审查日期：2026-09-07；M0-T1 状态复核：2026-09-08；M0-T2 状态复核：2026-09-09。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化和 SQLite Storage 基础已经验收，演示业务数据仍在内存中，真实模型尚未实现。
 
 ## 1. 来源与取舍
 
@@ -67,11 +67,11 @@
 
 ## 5. 验证方法与交接限制
 
-`tests/docs.test.mjs` 使用 Node 内置测试工具，检查四文档、AGENTS、桌面说明、七个 Feature、全部原任务及新增任务、31 表清单、INV 覆盖、合同枚举、Markdown 链接/围栏和 M0-T1 真实验收标记；反例验证缺少任务、错误映射、断链、遗漏不变量、未闭合围栏会失败。另运行 `git diff --check`。
+`tests/docs.test.mjs` 使用 Node 内置测试工具，检查四文档、AGENTS、桌面及 Storage 说明、七个 Feature、全部原任务及新增任务、31 表清单、INV 覆盖、合同枚举、Markdown 链接/围栏和已完成里程碑标记；反例验证缺少任务、错误映射、断链、遗漏不变量、未闭合围栏会失败。另运行 `git diff --check`。
 
 语义一致性由逐项对照来源及上述两张矩阵审查；自动文档测试不证明产品实现正确。后续实际业务不变量测试分别在各 Task 编写，M8 集成验证，不将本轮文本检查冒充业务测试。
 
-本轮实际文档测试结果：15 项通过、0 失败、0 跳过（Node v24.11.1）。最终提交前重跑同一命令并执行暂存区 whitespace 检查；提交本身及干净工作区由提交后检查确认。
+每个 Task 在提交前重跑文档测试和暂存区 whitespace 检查；提交本身及干净工作区由提交后检查确认。具体通过数量以该 Task 的最终验证输出为准，避免文档中的历史数字变成错误状态。
 
 原文档基线开工条件已在 M0-T1 完成：Rust/Cargo、C++ build tools、WebView2 和 Tauri 兼容要求已核验，依赖及锁文件已固定，桌面窗口已实际启动验证。Provider 验证仍属于 M0-T4。
 
@@ -84,3 +84,9 @@
 ## 7. Learning Map 一致性补充
 
 2026-09-08 将项目驱动学习纳入工作流。[LEARNING_MAP.md](../LEARNING_MAP.md) 不改变产品范围、技术合同或 Task 顺序；它按当前实施计划建立知识点及全部 53 个正式 Task 的唯一映射。Storage 保持在 M0-T2，避免沿用外部草稿中与本项目不一致的 Milestone 分层。项目落地状态与 JKai 的理解层级分离，Agent 不得因代码存在而代替用户宣称掌握。
+
+## 8. M0-T2 Storage 一致性补充
+
+2026-09-09 完成 M0-T2。PRODUCT_SPEC 将当前产品状态表述为“桌面壳与 SQLite 工作区已存在、演示业务数据尚未持久化”；TECH_SPEC 固定 `app_local_data_dir/workspace`、SQLite 连接、Migration、备份和阶段文件边界；WORK_MANUAL 继续禁止 UI 直写数据库；IMPLEMENTATION_PLAN 标记 M0-T2 完成并将 M0-T3 设为下一项。四份核心文档均未把 Storage 基础误写成业务 Schema、真实 AI、跨设备同步或已完成的便携模式。
+
+[STORAGE.md](STORAGE.md) 记录运行时真实目录、重启身份验证和可迁移性边界。源代码仓库可通过 Git 移动；程序可重新安装；用户工作区当前不会自动跟随设备。未来 Export/Import 必须作为明确 Task 实现和验证，不能靠复制运行中的 SQLite 文件冒充。

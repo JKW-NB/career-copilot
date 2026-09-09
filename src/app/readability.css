@@ -52,6 +52,11 @@ p { line-height: 1.8; }
   .action-bar { flex-wrap: wrap; gap: 16px; }
   .gap-candidate { flex-wrap: wrap; }
 }
+
+.storage-path {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
 @media (max-width: 600px) {
   .sidebar nav { overflow-x: auto; justify-content: flex-start; }
   .sidebar .nav-item { min-width: 84px; flex-shrink: 0; }
