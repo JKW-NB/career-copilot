@@ -176,6 +176,6 @@ Career Copilot 实例：
    └─ native desktop smoke
 ```
 
-当前学习材料：`src/main.tsx`、`src/app/`、`src/domain/`、`src/application/demo-service.ts`、`src-tauri/src/main.rs`、`src-tauri/src/lib.rs`、`src-tauri/tauri.conf.json`、`src-tauri/capabilities/default.json`、`package.json`、`Cargo.toml` 与 `tests/desktop/smoke.mjs`。
+当前学习材料：`src/main.tsx`、`src/app/`、`src/application/demo-service.ts`、`src-tauri/src/main.rs`、`src-tauri/src/lib.rs`、`src-tauri/tauri.conf.json`、`src-tauri/capabilities/default.json`、`package.json`、`vite.config.mjs`、`tsconfig.json`、`src-tauri/Cargo.toml` 与 `tests/desktop/smoke.mjs`。
 
 当前状态：正在进行 M0-T1 第一轮讲解，JKai 尚未确认理解。讲解结束后停止并讨论；不得自动进入 M0-T2 学习或 M0-T3 实现。
