@@ -79,10 +79,12 @@ test('learning map is a progressive knowledge tree instead of a task matrix', ()
   ]) assert.match(learning, new RegExp(branch.replaceAll('/', '\\/')));
   assert.doesNotMatch(learning, /^\| M\d+-T\d+ \|/m);
   assert.match(learning, /代码已经存在不等于 JKai 已经理解/);
-  assert.match(learning, /我的理解：\n待 JKai 自己确认/);
+  assert.match(learning, /已完成本轮学习.*不表示永久掌握/);
+  assert.match(learning, /我的当前理解：/);
+  assert.match(learning, /易混淆点：/);
 });
 
-test('learning gate stops after teaching until JKai authorizes implementation', () => {
+test('learning map sync gate blocks implementation and the next task', () => {
   const agents = docs['AGENTS.md'];
   const manual = docs['WORK_MANUAL.md'];
   const plan = docs['IMPLEMENTATION_PLAN.md'];
@@ -90,11 +92,32 @@ test('learning gate stops after teaching until JKai authorizes implementation', 
   for (const text of [agents, manual, plan]) {
     assert.match(text, /可以开始实现/);
     assert.match(text, /停止/);
+    assert.match(text, /Learning Map Sync/);
+    assert.match(text, /Implementation Reflection/);
   }
-  assert.match(manual, /概念是什么、为什么项目需要、不采用会怎样、与相近概念的区别、当前代码对应哪里/);
-  assert.match(plan, /不得自动衔接下一 Task/);
-  assert.match(learning, /当前学习范围：M0-T1/);
-  assert.match(learning, /不得自动进入 M0-T2 学习或 M0-T3 实现/);
+  for (const teachingElement of ['概念', '必要性', '不采用的后果', '相近概念区别', '代码落点']) {
+    assert.ok(manual.includes(teachingElement), `missing teaching element: ${teachingElement}`);
+  }
+  assert.match(manual, /全部 Parts 通过后/);
+  assert.match(plan, /不得跳过同步或自动衔接下一 Task/);
+  assert.match(learning, /当前学习状态/);
+  assert.match(learning, /M0-T1 已完成第一轮 `16\/16` 学习/);
+  assert.match(learning, /M0-T2 当前为 `1\/14`/);
+  assert.match(learning, /不自动继续 M0-T2，也不进入 M0-T3/);
+  assert.doesNotMatch(learning, /M0-T1 第一轮讲解，JKai 尚未确认理解/);
+});
+
+test('M0-T1 learning sync records real knowledge, misunderstandings and implementation evidence', () => {
+  const learning = docs['LEARNING_MAP.md'];
+  for (const concept of ['Frontend', 'React', 'TypeScript', 'Tauri', 'WebView', 'Module', 'Interface / Contract', 'Build Toolchain', 'Testing Layers']) {
+    const escaped = concept.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    assert.match(learning, new RegExp(`\\| (?:└─ )?${escaped} \\| 已完成本轮学习 \\|`), `${concept} status not synced`);
+  }
+  for (const evidence of ['src/main.tsx', 'src/app/App.tsx', 'src-tauri/src/main.rs', 'src-tauri/tauri.conf.json', 'package-lock.json', 'tests/desktop/smoke.mjs']) {
+    assert.ok(learning.includes(evidence), `missing M0-T1 reflection evidence: ${evidence}`);
+  }
+  assert.match(learning, /npm 不只是“配置需要的东西”/);
+  assert.match(learning, /浏览器 E2E 通过 = 桌面程序可用/);
 });
 
 test('seven Features and eight invariants have actual implementation/test mappings', () => {

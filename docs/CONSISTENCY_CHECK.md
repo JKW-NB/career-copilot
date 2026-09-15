@@ -1,6 +1,6 @@
 # 四份核心文档一致性检查
 
-审查日期：2026-09-07；M0-T1 状态复核：2026-09-08；M0-T2 状态复核：2026-09-09。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化和 SQLite Storage 基础已经验收，演示业务数据仍在内存中，真实模型尚未实现。
+审查日期：2026-09-07；M0-T1 状态复核：2026-09-08；M0-T2 状态复核：2026-09-09；Learning Map Sync 复核：2026-09-15。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化和 SQLite Storage 基础已经验收，演示业务数据仍在内存中，真实模型尚未实现。
 
 ## 1. 来源与取舍
 
@@ -93,4 +93,10 @@
 
 ## 9. Learning Gate 一致性补充
 
-AGENTS、WORK_MANUAL 与 IMPLEMENTATION_PLAN 统一规定：每个 Task 先只读分析和讲解，讲解后停止；只有 JKai 明确说“可以开始实现”才允许修改文件；实操后将知识补回原知识节点并停止。是否进入下一 Task 只能由 JKai 决定。M0-T1、M0-T2 的代码与完成记录不回滚，作为后续学习材料。
+AGENTS、WORK_MANUAL 与 IMPLEMENTATION_PLAN 统一规定：每个 Task 先只读分析并拆分稳定 Learning Parts，逐 Part 讲解、检查和批改；全部通过后强制执行 Learning Map Sync 并停止，只有 JKai 明确说“可以开始实操”或“可以开始实现”才允许修改实现文件；实操后再执行 Implementation Reflection。是否进入下一 Task 只能由 JKai 决定。M0-T1、M0-T2 的代码与完成记录不回滚，作为后续学习材料。
+
+## 10. Learning Map Sync Gate 一致性补充
+
+2026-09-15 增加 Learning Map Sync Gate，修复“Task 学习 Parts 已全部通过但知识地图仍显示学习中”的流程缺口。LEARNING_MAP 继续按知识树组织，不按 M0-T1、M0-T2 堆开发日志；Task 只触发原知识节点的两次同步。第一次同步保存本轮知识、JKai 已表达的当前理解和真实易混淆点，状态仅写“已完成本轮学习”，不写“已掌握”；第二次同步保存 Implementation Reflection 的代码落点与设计取舍。
+
+M0-T1 已按例外流程完成 16/16 学习同步，并使用既有桌面代码、配置和测试补齐 Implementation Reflection，没有重写产品代码。M0-T2 仍停在 1/14，不能因 M0-T1 同步完成而自动继续，更不能进入 M0-T3。
