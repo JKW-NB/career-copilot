@@ -8,7 +8,7 @@
 
 ## 当前状态
 
-开发暂停。M0-T1、M0-T2 的既有实现保持完成状态并作为学习材料；M0-T1 已完成 16/16 学习、Learning Map Sync 和基于现有代码的 Implementation Reflection。M0-T2 学习暂停在 1/14，未经 JKai 明确决定不继续学习，也不进入 M0-T3 实现。
+开发暂停。M0-T1、M0-T2 的既有实现保持完成状态并作为学习材料；M0-T1 已完成 16/16、M0-T2 已完成 14/14 学习、Learning Map Sync 和基于现有代码的 Implementation Reflection。未经 JKai 明确决定，不进入 M0-T3 学习或实现。
 
 - [x] DOCS-BASELINE：四份文档、一致性审查、AGENTS.md、文档测试与 Git 仓库准备。
 - [x] DEMO-T1：前端交互 Demo，验证 Strategy → Portfolio → Resume → Final 的核心流程；仅使用内存合成数据。

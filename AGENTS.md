@@ -6,4 +6,4 @@ Career Copilot 同时是产品和学习主线。开始任何 Task 前依次读�
 
 以 WORK_MANUAL.md 的完成定义为准。一次完整、独立可验证的改动对应一个 commit；不是每次保存文件都提交。失败检查不得跳过或宣称通过；修复后再提交。不得夹带其他人的未提交改动，不自动推送远程。
 
-面向用户使用中文，称呼 JKai。仓库已有 Tauri 桌面壳、SQLite Storage 基础设施与内存交互 Demo；M0-T1、M0-T2 保留为学习和 Implementation Reflection 材料。M0-T1 已完成 16/16 学习及两次同步闭环；M0-T2 暂停在 1/14，未经 JKai 确认不得继续其学习，更不得进入 M0-T3 开发。不要把演示或计划中的功能当作正式实现。
+面向用户使用中文，称呼 JKai。仓库已有 Tauri 桌面壳、SQLite Storage 基础设施与内存交互 Demo；M0-T1、M0-T2 保留为学习和 Implementation Reflection 材料。M0-T1 已完成 16/16、M0-T2 已完成 14/14 学习及两次同步闭环；未经 JKai 明确决定不得进入 M0-T3 学习或开发。不要把演示或计划中的功能当作正式实现。

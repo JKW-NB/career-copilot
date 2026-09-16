@@ -102,8 +102,8 @@ test('learning map sync gate blocks implementation and the next task', () => {
   assert.match(plan, /不得跳过同步或自动衔接下一 Task/);
   assert.match(learning, /当前学习状态/);
   assert.match(learning, /M0-T1 已完成第一轮 `16\/16` 学习/);
-  assert.match(learning, /M0-T2 当前为 `1\/14`/);
-  assert.match(learning, /不自动继续 M0-T2，也不进入 M0-T3/);
+  assert.match(learning, /M0-T2 已完成第一轮 `14\/14` 学习/);
+  assert.match(learning, /不自动进入 M0-T3 学习或实现/);
   assert.doesNotMatch(learning, /M0-T1 第一轮讲解，JKai 尚未确认理解/);
 });
 
@@ -118,6 +118,21 @@ test('M0-T1 learning sync records real knowledge, misunderstandings and implemen
   }
   assert.match(learning, /npm 不只是“配置需要的东西”/);
   assert.match(learning, /浏览器 E2E 通过 = 桌面程序可用/);
+});
+
+test('M0-T2 learning sync records storage knowledge and existing implementation reflection', () => {
+  const learning = docs['LEARNING_MAP.md'];
+  for (const concept of ['Workspace / Persistence', 'Relational Database / SQLite', 'Foreign Key', 'Transaction', 'Migration', 'File Storage']) {
+    const escaped = concept.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    assert.match(learning, new RegExp(`\\| ${escaped} \\| 已完成本轮学习 \\|`), `${concept} status not synced`);
+  }
+  assert.match(learning, /\| Primary Key \| 未学习 \|/);
+  for (const evidence of ['src-tauri/src/lib.rs', 'src-tauri/src/storage/mod.rs', 'src-tauri/migrations/0001_storage.sql', 'src-tauri/tests/storage_contract.rs']) {
+    assert.ok(learning.includes(evidence), `missing M0-T2 reflection evidence: ${evidence}`);
+  }
+  assert.match(learning, /MySQL 是数据库管理系统，SQL 才是查询语言/);
+  assert.match(learning, /迁移不能保证数据绝对不会损坏/);
+  assert.match(learning, /暂存流程只证明写入完成/);
 });
 
 test('seven Features and eight invariants have actual implementation/test mappings', () => {

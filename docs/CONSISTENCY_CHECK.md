@@ -1,6 +1,6 @@
 # 四份核心文档一致性检查
 
-审查日期：2026-09-07；M0-T1 状态复核：2026-09-08；M0-T2 状态复核：2026-09-09；Learning Map Sync 复核：2026-09-15。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化和 SQLite Storage 基础已经验收，演示业务数据仍在内存中，真实模型尚未实现。
+审查日期：2026-09-07；M0-T1 状态复核：2026-09-08；M0-T2 状态复核：2026-09-09；Learning Map Sync 复核：2026-09-15；M0-T2 学习闭环复核：2026-09-16。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化和 SQLite Storage 基础已经验收，演示业务数据仍在内存中，真实模型尚未实现。
 
 ## 1. 来源与取舍
 
@@ -87,7 +87,7 @@
 
 ## 8. M0-T2 Storage 一致性补充
 
-2026-09-09 完成 M0-T2。PRODUCT_SPEC 将当前产品状态表述为“桌面壳与 SQLite 工作区已存在、演示业务数据尚未持久化”；TECH_SPEC 固定 `app_local_data_dir/workspace`、SQLite 连接、Migration、备份和阶段文件边界；WORK_MANUAL 继续禁止 UI 直写数据库；IMPLEMENTATION_PLAN 保留 M0-T2 完成状态。M0-T3 仍是计划中的下一项实现，但开发现已暂停，当前只学习 M0-T1。四份核心文档均未把 Storage 基础误写成业务 Schema、真实 AI、跨设备同步或已完成的便携模式。
+2026-09-09 完成 M0-T2。PRODUCT_SPEC 将当前产品状态表述为“桌面壳与 SQLite 工作区已存在、演示业务数据尚未持久化”；TECH_SPEC 固定 `app_local_data_dir/workspace`、SQLite 连接、Migration、备份和阶段文件边界；WORK_MANUAL 继续禁止 UI 直写数据库；IMPLEMENTATION_PLAN 保留 M0-T2 完成状态。M0-T1、M0-T2 的学习与既有实现复盘现已闭环；M0-T3 仍是计划中的下一项 Task，但尚未开始学习或实现。四份核心文档均未把 Storage 基础误写成业务 Schema、真实 AI、跨设备同步或已完成的便携模式。
 
 [STORAGE.md](STORAGE.md) 记录运行时真实目录、重启身份验证和可迁移性边界。源代码仓库可通过 Git 移动；程序可重新安装；用户工作区当前不会自动跟随设备。未来 Export/Import 必须作为明确 Task 实现和验证，不能靠复制运行中的 SQLite 文件冒充。
 
@@ -99,4 +99,6 @@ AGENTS、WORK_MANUAL 与 IMPLEMENTATION_PLAN 统一规定：每个 Task 先只�
 
 2026-09-15 增加 Learning Map Sync Gate，修复“Task 学习 Parts 已全部通过但知识地图仍显示学习中”的流程缺口。LEARNING_MAP 继续按知识树组织，不按 M0-T1、M0-T2 堆开发日志；Task 只触发原知识节点的两次同步。第一次同步保存本轮知识、JKai 已表达的当前理解和真实易混淆点，状态仅写“已完成本轮学习”，不写“已掌握”；第二次同步保存 Implementation Reflection 的代码落点与设计取舍。
 
-M0-T1 已按例外流程完成 16/16 学习同步，并使用既有桌面代码、配置和测试补齐 Implementation Reflection，没有重写产品代码。M0-T2 仍停在 1/14，不能因 M0-T1 同步完成而自动继续，更不能进入 M0-T3。
+M0-T1 已按例外流程完成 16/16 学习同步，并使用既有桌面代码、配置和测试补齐 Implementation Reflection，没有重写产品代码。
+
+2026-09-16，M0-T2 完成 14/14 学习同步，并使用既有 Storage、Migration 和合同测试补齐 Implementation Reflection，没有重写产品代码。知识写回 Workspace / Persistence、SQLite、Foreign Key、Transaction、Migration 和 File Storage 节点；Primary Key 与完整 Data Model 仍保持未学习。M0-T3 继续受 Learning Gate 约束，不能自动开始。
