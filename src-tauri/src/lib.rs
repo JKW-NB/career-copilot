@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod storage;
 pub mod workspace;
 
@@ -42,6 +43,49 @@ fn read_final_pdf(
     workspace::read_pdf(&storage, &file_id)
 }
 
+#[tauri::command]
+fn ai_status(storage: tauri::State<'_, Storage>) -> workspace::AppResult<serde_json::Value> {
+    ai::status(&storage)
+}
+
+#[tauri::command]
+fn configure_ai(
+    storage: tauri::State<'_, Storage>,
+    config: ai::ProviderConfig,
+    api_key: Option<String>,
+) -> workspace::AppResult<serde_json::Value> {
+    ai::configure(&storage, config, api_key)
+}
+
+#[tauri::command]
+fn delete_ai_key(storage: tauri::State<'_, Storage>) -> workspace::AppResult<serde_json::Value> {
+    ai::delete_key(&storage)
+}
+
+#[tauri::command]
+async fn generate_ai(
+    storage: tauri::State<'_, Storage>,
+    request: ai::AiRequest,
+) -> workspace::AppResult<serde_json::Value> {
+    ai::generate(&storage, request).await
+}
+
+#[tauri::command]
+fn apply_ai_proposal(
+    storage: tauri::State<'_, Storage>,
+    run_id: String,
+) -> workspace::AppResult<serde_json::Value> {
+    ai::apply(&storage, &run_id)
+}
+
+#[tauri::command]
+fn dismiss_ai_proposal(
+    storage: tauri::State<'_, Storage>,
+    run_id: String,
+) -> workspace::AppResult<()> {
+    ai::dismiss(&storage, &run_id)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -65,7 +109,13 @@ pub fn run() {
             workspace_snapshot,
             workspace_action,
             attach_final_pdf,
-            read_final_pdf
+            read_final_pdf,
+            ai_status,
+            configure_ai,
+            delete_ai_key,
+            generate_ai,
+            apply_ai_proposal,
+            dismiss_ai_proposal
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

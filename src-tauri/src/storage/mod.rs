@@ -10,7 +10,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-const LATEST_SCHEMA_VERSION: u32 = 2;
+const LATEST_SCHEMA_VERSION: u32 = 3;
 const DEFAULT_MIGRATIONS: &[Migration] = &[
     Migration::new(
         1,
@@ -21,6 +21,11 @@ const DEFAULT_MIGRATIONS: &[Migration] = &[
         2,
         "career workspace",
         include_str!("../../migrations/0002_career_workspace.sql"),
+    ),
+    Migration::new(
+        3,
+        "AI proposals",
+        include_str!("../../migrations/0003_ai_proposals.sql"),
     ),
 ];
 static NEXT_PENDING_FILE: AtomicU64 = AtomicU64::new(1);

@@ -36,7 +36,7 @@ fn initializes_layout_and_reuses_workspace_identity_after_reopen() {
     let first = Storage::initialize(root.path()).expect("first initialization");
     let first_id = first.info().workspace_id;
 
-    assert_eq!(first.info().schema_version, 2);
+    assert_eq!(first.info().schema_version, 3);
     assert_eq!(first.info().root, root.path());
     assert!(first.paths().database.is_file());
     assert!(first.paths().evidence.is_dir());
@@ -46,7 +46,7 @@ fn initializes_layout_and_reuses_workspace_identity_after_reopen() {
 
     let reopened = Storage::initialize(root.path()).expect("reopen storage");
     assert_eq!(reopened.info().workspace_id, first_id);
-    assert_eq!(reopened.info().schema_version, 2);
+    assert_eq!(reopened.info().schema_version, 3);
 }
 
 #[test]

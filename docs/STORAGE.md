@@ -4,7 +4,7 @@
 
 工作区已迁移到 D:\\CareerCopilotData\\workspace；原 C:\\Users\\HUAWEI\\AppData\\Local\\com.careercopilot.desktop\\workspace 是指向该位置的 Junction。设置页可能仍显示原路径，实际读写发生在 D 盘。原迁移备份暂留 C 盘。
 
-个人工作区现使用 Schema V2。首次启动在一致性备份后执行 0002 迁移，保存真实职业资产、事实修订、岗位、确认组合、Ready 内容、Final 文件元数据和投递记录。原内存 Demo 与个人数据库隔离。下文“三种位置”等 M0-T2 记录仍说明默认机制，不代表当前数据库只有基础元数据。
+新版本使用 Schema V3。首次打开旧工作区会先一致性备份再顺序迁移：0002 保存职业资产、事实修订、岗位、确认组合、Ready、Final 元数据和投递；0003 增加最小 AI 提案状态。API Key 位于 Windows 系统凭据，不随 app.db 复制；迁移设备后需要重新配置。原内存 Demo 与个人数据库隔离。下文 M0-T2 记录说明默认机制，不代表当前数据库只有基础元数据。
 
 进程可设置 CAREER_COPILOT_WORKSPACE 为绝对目录，用于显式工作区选择；未设置时遵循原 Tauri 应用数据目录。正式迁移应关闭应用并保留完整工作区，当前仍未提供跨设备导出/导入界面。
 

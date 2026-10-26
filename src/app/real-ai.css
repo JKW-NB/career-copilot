@@ -1,0 +1,15 @@
+.real-ai[hidden]{display:none}
+.real-ai .ai-answer{white-space:pre-wrap;overflow-wrap:anywhere}
+.real-ai .real-ai-check{display:flex;flex-direction:row;align-items:flex-start;gap:9px;font-size:13px;margin:10px 0}
+.real-ai-check input{margin-top:4px}
+.real-ai-check small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.real-ai-facts{max-height:190px;overflow:auto}
+.real-ai-payload{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:180px;overflow:auto}
+.real-ai-destination,.real-ai-meta{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.real-ai .proposal{background:#edf2e7;border:1px solid #d8e2ce;margin:14px 0}
+.real-ai .ai-composer textarea{border:0;background:transparent}
+.real-ai .ai-conversation li{font-size:14px;line-height:1.8;margin-bottom:10px}
+.real-app.has-assistant .real-form-grid{grid-template-columns:1fr}
+.real-app .real-ai .ai-current-context{max-height:38dvh}
+.real-app.has-assistant .real-stats{grid-template-columns:1fr 1fr}
+@media(max-width:999px){.real-app .real-ai .ai-current-context{max-height:19dvh}.real-app.has-assistant>.workspace{padding-bottom:62dvh}}

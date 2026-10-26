@@ -217,6 +217,16 @@ fn allowed(db: &Connection, rev: &str) -> AppResult<()> {
 pub fn execute(storage: &Storage, action: Action) -> AppResult<Value> {
     let mut db = storage.connection()?;
     let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let result = execute_in_transaction(storage, &tx, action)?;
+    tx.commit()?;
+    Ok(result)
+}
+
+pub(crate) fn execute_in_transaction(
+    storage: &Storage,
+    tx: &rusqlite::Transaction<'_>,
+    action: Action,
+) -> AppResult<Value> {
     let result = match action {
         Action::AddAsset {
             organization,
@@ -545,7 +555,6 @@ pub fn execute(storage: &Storage, action: Action) -> AppResult<Value> {
             json!({})
         }
     };
-    tx.commit()?;
     Ok(result)
 }
 fn rows(db: &Connection, sql: &str) -> AppResult<Vec<Value>> {

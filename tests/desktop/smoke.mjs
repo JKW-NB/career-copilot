@@ -84,7 +84,7 @@ for (let cycle = 1; cycle <= 2; cycle++) {
     const workspace = await page.getByTestId('workspace-id').textContent();
     assert.ok(storagePath?.endsWith(path.join('com.careercopilot.desktop', 'workspace')), 'Unexpected isolated workspace path: ' + storagePath);
     assert.ok(existsSync(path.join(storagePath, 'app.db')), 'Desktop database was not created.');
-    assert.match(workspace, /Schema V2 · Workspace [a-f0-9]{32}/);
+    assert.match(workspace, /Schema V3 · Workspace [a-f0-9]{32}/);
     if (persistentWorkspace) assert.equal(workspace, persistentWorkspace, 'Workspace identity changed after restart.');
     persistentWorkspace = workspace;
     const toggle = page.getByRole('switch', { name: 'AI 助手' });

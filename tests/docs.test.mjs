@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'LEARNING_MAP.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md', 'docs/STORAGE.md', 'README.md', 'docs/DELIVERY.md', 'docs/PORTFOLIO.md'];
+const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'LEARNING_MAP.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md', 'docs/STORAGE.md', 'README.md', 'docs/DELIVERY.md', 'docs/PORTFOLIO.md', 'docs/AI_CONNECTION.md'];
 const docs = Object.fromEntries(names.map(name => [name, readFileSync(resolve(root, name), 'utf8')]));
 const baselineTaskCounts = [5, 5, 6, 5, 5, 6, 7, 6, 6];
 const expectedTasks = baselineTaskCounts.flatMap((count, milestone) =>

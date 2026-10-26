@@ -1,16 +1,20 @@
 # Career Copilot — Technical Spec V1
 
-基线：2026-09-07，交互与 M0-T1 补充：2026-09-08，Storage 基础补充：2026-09-09。本文约束正式实现；当前 React 界面已由 Tauri 2 桌面壳承载，SQLite 工作区和迁移机制已经建立，但演示资产仍未接入数据库，真实模型也未连接。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
+基线：2026-09-07，交互与 M0-T1 补充：2026-09-08，Storage 基础补充：2026-09-09，个人工作区与模型连接：2026-10-26。本文约束正式实现；当前有独立的持久化个人工作区、桌面模型连接和内存 Demo。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
 
 Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 和 Proposal。Proposal 包含类型、目标、预期旧值、修改内容与 pending/applied/dismissed 状态；应用在服务内重新检查目标和旧值，过期或重复应用拒绝，失败不发布任何改动。资产描述不冒充 Fact。Confirmed Portfolio 同时保存 requirements 快照；调整重要性或纳入范围后须重新确认，新内容版本不覆盖旧 Ready。聊天上下文是用户选择的本轮快照，发送后仍可回看，刷新/重置清除；Demo 不向外部发送。正式 AI Assistant 复用现有 Gateway 与业务用例，新增事实继续走 Fact Extraction/Review，不另建平行业务系统或聊天数据库。
 
 ## 1. 架构边界
 
-2026-10-26 个人工作区纵向切片：React `WorkspaceApp` → `career-service` → Rust `workspace_action/workspace_snapshot/attach_final_pdf/read_final_pdf` → SQLite 和受管文件。Migration 0002 按当前用例创建资产、追加事实修订、岗位要求版本、确认组合及子项、Ready 内容、真实 Final PDF、Application；这是 Schema V1 的增量落地，不代表 31 表蓝图及全部字段已实现。当前手工录入把一次输入作为 Experience → Project → Contribution，后续再扩展多项目编辑；岗位要求和内容计划保存 JSON 快照。暂不实现方向母版、能力 taxonomy、证据解析、访谈和真实模型。姓名、联系方式和教育信息由用户在编译时输入并冻结到 Content Plan；核心经历内容逐字来自允许 Fact Revision，不做未经验证的自然语言改写。
+2026-10-26 个人工作区纵向切片：React `WorkspaceApp` → `career-service` → Rust `workspace_action/workspace_snapshot/attach_final_pdf/read_final_pdf` → SQLite 和受管文件。Migration 0002 按当前用例创建资产、追加事实修订、岗位要求版本、确认组合及子项、Ready 内容、真实 Final PDF、Application；这是 Schema V1 的增量落地，不代表 31 表蓝图及全部字段已实现。当前手工录入把一次输入作为 Experience → Project → Contribution，后续再扩展多项目编辑；岗位要求和内容计划保存 JSON 快照。暂不实现方向母版、能力 taxonomy、证据解析和访谈；模型连接增量见下文。姓名、联系方式和教育信息由用户在编译时输入并冻结到 Content Plan；核心经历内容逐字来自允许 Fact Revision，不做未经验证的自然语言改写。
 
 事实的 review/revise/retract 携带 expected_revision_id，桌面事务重新检查当前版本、状态和资产可用性。高风险规则保守识别数字及职责主张，需要用户二次勾选；USER_CONFIRMED 不等于 EVIDENCE_VERIFIED。Ready 只追加，保存事实引用和文字，撤回原事实不重写旧快照。Final 先落盘再记录元数据；登记投递时重新读取并校验 SHA-256，事务内创建 Application 和永久使用锁。PDF 上传检查大小、文件头与结束标记，不宣称验证 PDF 全部语法或内容真实性。导出 HTML 会转义用户内容，不执行其中的标记。
 
-可选进程环境变量 CAREER_COPILOT_WORKSPACE 只接受绝对路径，用于隔离测试或明确迁移的数据根目录；未设置时仍用 app_local_data_dir/workspace。本机 C 盘目录已通过 Junction 指向 D 盘，程序继续沿原路径访问，数据实际位于 D 盘。测试不得使用个人真实工作区。模型网络模块暂未接入，自动审批要求明确敏感上下文的发送授权；不得通过其他调用方式绕过。
+可选进程环境变量 CAREER_COPILOT_WORKSPACE 只接受绝对路径，用于隔离测试或明确迁移的数据根目录；未设置时仍用 app_local_data_dir/workspace。本机 C 盘目录已通过 Junction 指向 D 盘，程序继续沿原路径访问，数据实际位于 D 盘。测试不得使用个人真实工作区。2026-10-26 已获用户所选上下文与指定接口的数据发送授权；仅用户主动发送才触发请求。
+
+M0-T4 当前落点：`ai-service` → Rust `ai.rs` → 用户配置的兼容 Chat Completions 接口；默认模型用于助手/连接检查，高质量模型用于岗位分析。Key 经 keyring/windows-native 保存到系统凭据，按工作区 ID 和基础地址摘要隔离；SQL 只存非秘密配置和最小 AI 运行记录。HTTPS 远程、HTTP 仅回环地址，禁 URL 凭据/查询参数及重定向。45 秒单次请求超时、10 秒连接超时，最多两次尝试；结构化输出经严格字段/类型/长度校验。网络调用不持有数据库事务。
+
+Schema V3 的 0003 迁移扩展 ai_runs，保存校验后的提案、目标版本和应用状态。调用只解析用户明确选择的当前事实修订及 JD；连接检查使用固定文本。完整 Prompt、原文上下文和密钥不写入运行日志。提案应用时在一个事务中重新检查目标与版本，复用 workspace 业务命令，再标记 APPLIED；重复应用返回已有结果。事实新修订为 UNCERTAIN，岗位要求新增版本；既有 Confirmed/Ready 不覆盖。放弃清除提案正文；收起只保留内存会话。个人版尚无直接改写 Ready Bullet 和单步撤销入口，这些交互仍属于独立 Demo；不宣称所有 AI Task 已落地。详见 [AI 连接](docs/AI_CONNECTION.md)。
 
 AI Side Panel 实现合同：App 保存展开态与当前页面，Assistant 常驻挂载以保留收起后的会话；assistant-context 根据页面/Tab 枚举可编辑目标，点击内容可带入目标，发送时固定目标与上下文快照。FieldTarget 区分 description/bullet/requirement，字段修改经 DemoService 校验旧值和事实准入后写入；descriptions 只保存工作描述，不替代 Fact 或历史快照。Proposal 增加 undone 状态。单步 Undo 保存此次涉及的数据部分，撤销前核对应用后值；有后续修改时拒绝撤销，不触及 Ready/Final/Confirmed 历史。生产化继续复用现有业务用例，不把此内存实现当作数据库方案。
 

@@ -28,7 +28,7 @@ fn upgrades_v1_workspace_with_identity_and_backup_intact() {
     drop(db);
     let storage = Storage::initialize(&dir.0).unwrap();
     assert_eq!(storage.info().workspace_id, identity);
-    assert_eq!(storage.info().schema_version, 2);
+    assert_eq!(storage.info().schema_version, 3);
     assert!(workspace::snapshot(&storage).unwrap()["assets"]
         .as_array()
         .unwrap()

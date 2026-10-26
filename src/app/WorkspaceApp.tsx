@@ -1,9 +1,13 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { Compass, Layers3, BriefcaseBusiness, FolderClosed, Settings2, Home, ArrowRight, ShieldCheck, Check, X, FileText, Plus } from 'lucide-react';
+import { Compass, Layers3, BriefcaseBusiness, FolderClosed, Settings2, Home, ArrowRight, ShieldCheck, Check, X, FileText, Plus, Sparkles } from 'lucide-react';
 import { createCareerService, emptyCareerState, errorMessage, resumeHtml, resumeMarkdown, download, type Action, type Fact, type Resume, type CareerService } from '../application/career-service';
 import { loadStorageInfo, type StorageInfo } from '../infrastructure/storage';
 import DemoApp from './App';
 import { Modal } from './shared';
+import { createAiService, type AiService } from '../application/ai-service';
+import { AiSettings } from './AiSettings';
+import { RealAssistant, type AiIntent } from './RealAssistant';
+import './real-ai.css';
 import './workspace.css';
 type Page = 'overview' | 'assets' | 'jobs' | 'library' | 'settings';
 const owners = [['UNKNOWN','尚不确定'],['CONTRIBUTOR','参与贡献'],['CORE_CONTRIBUTOR','核心贡献者'],['LEAD','主导'],['INDEPENDENT','独立完成'],['TEAM_RESULT','团队成果']];
@@ -14,8 +18,13 @@ function ResumePreview({ resume }: { resume: Resume }) {
  for (const i of resume.plan.items) { const key = i.organization + ' · ' + i.title + (i.role ? ' / ' + i.role : ''); groups.set(key, [...(groups.get(key) ?? []), i.text]); }
  return <article className="real-paper"><h1>{resume.plan.name}</h1><p>{resume.plan.contact}</p>{resume.plan.education && <><h2>教育背景</h2><p className="preserve-lines">{resume.plan.education}</p></>}<h2>项目与工作经历</h2>{[...groups].map(([title, facts]) => <section key={title}><h3>{title}</h3><ul>{facts.map((text, index) => <li key={index}>{text}</li>)}</ul></section>)}</article>;
 }
-export default function WorkspaceApp({ service: provided }: { service?: CareerService }) {
+export default function WorkspaceApp({ service: provided, aiService: providedAi }: { service?: CareerService; aiService?: AiService }) {
  const [service] = useState(() => provided ?? createCareerService());
+ const [aiService] = useState(() => providedAi ?? createAiService(undefined, service.native));
+ const [assistantOpen,setAssistantOpen] = useState(false);
+ const [aiIntent,setAiIntent] = useState<AiIntent>();
+ const [configurationVersion,setConfigurationVersion] = useState(0);
+ const [requirementsDraft,setRequirementsDraft] = useState<Record<string,string>>({});
  const [state, setState] = useState(emptyCareerState);
  const [page, setPage] = useState<Page>('overview');
  const [demo, setDemo] = useState(false);
@@ -71,14 +80,14 @@ export default function WorkspaceApp({ service: provided }: { service?: CareerSe
   { id: 'library' as const, title: '版本资料库', icon: FolderClosed },
  ];
  if (demo) return <><div className="return-real"><button className="button button-primary" onClick={() => setDemo(false)}>返回个人工作区</button></div><DemoApp /></>;
- return <div className="app-shell real-app">
+ return <div className={'app-shell real-app ' + (assistantOpen ? 'has-assistant' : '')}>
   <a className="skip-link" href="#real-main">跳到主要内容</a>
   <aside className="sidebar">
    <button className="brand" onClick={() => setPage('overview')}><span className="brand-symbol"><Compass /></span><span className="brand-wordmark">career<span>copilot</span></span></button>
    <div className="sidebar-section-label">个人求职工作台</div>
    <nav aria-label="个人工作区导航">{navigation.map(n => <button key={n.id} className={'nav-item ' + (page === n.id ? 'active' : '')} aria-current={page === n.id ? 'page' : undefined} onClick={() => setPage(n.id)}><n.icon size={18} /><span>{n.title}</span></button>)}</nav>
    <div className="sidebar-direction"><div className="sidebar-section-label">当前目标</div><p>{job ? job.roleTitle : '添加你的第一个岗位'}</p></div>
-   <div className="sidebar-bottom"><button className="settings-nav" onClick={() => setPage('settings')}><Settings2 size={18} />设置与数据</button><button className="settings-nav" onClick={() => setDemo(true)}>查看交互演示</button><div className="profile"><span className="avatar">我</span><div><strong>个人工作区</strong><small>本地保存 · 自己掌控</small></div></div></div>
+   <div className="sidebar-bottom"><button className="assistant-entry" role="switch" aria-label="个人 AI 助手" aria-checked={assistantOpen} onClick={()=>setAssistantOpen(v=>!v)}><Sparkles size={18}/><span className="assistant-entry-label">AI 助手</span><span className="assistant-switch-track" aria-hidden="true"><span/></span></button><button className="settings-nav" onClick={() => setPage('settings')}><Settings2 size={18} />设置与数据</button><button className="settings-nav" onClick={() => setDemo(true)}>查看交互演示</button><div className="profile"><span className="avatar">我</span><div><strong>个人工作区</strong><small>本地保存 · 自己掌控</small></div></div></div>
   </aside>
   <div className="workspace">
    <header className="topbar"><div className="breadcrumbs">个人工作区 <span>/</span><strong>{navigation.find(n => n.id === page)?.title ?? '设置与数据'}</strong></div><span className="badge badge-green"><ShieldCheck size={13} />{service.native ? 'SQLite 本地工作区' : '桌面版专属'}</span></header>
@@ -117,9 +126,10 @@ export default function WorkspaceApp({ service: provided }: { service?: CareerSe
      <div className="workflow-tabs" role="tablist" aria-label="个人岗位流程">{([['strategy','岗位要求'],['portfolio','贡献组合'],['resume','简历内容'],['final','最终文件']] as const).map(([id,label]) => <button key={id} role="tab" aria-selected={readyTab === id} className={readyTab === id ? 'active' : ''} onClick={() => setReadyTab(id)}>{label}</button>)}</div>
      {readyTab === 'strategy' && <>
       <details className="real-card"><summary>岗位原文</summary><p className="preserve-lines">{job.jd}</p></details>
-      <form key={job.id + (analysis?.id ?? '')} className="real-card form-stack" onSubmit={e => submit(e, d => act({type:'save_analysis',job_id:job.id,expected_jd:job.jd,requirements:field(d,'requirements').split('\n').map(s => s.trim()).filter(Boolean)}, '岗位要求已保存为新版本。'), () => setReadyTab('portfolio'))}>
-       <h2>这个岗位需要证明什么？</h2><p className="muted">从 JD 中提炼能力及重要性，每行一项，例如“核心：能把用户需求拆成可验证的产品方案”。这是你的分析，不是模型评分。</p>
-       <label>能力与证明要求<textarea name="requirements" required rows={6} maxLength={16000} defaultValue={analysis?.requirements.join('\n') ?? ''} placeholder="核心：…\n重要：…\n辅助：…" /></label>
+      <form key={job.id + (analysis?.id ?? '')} className="real-card form-stack" onSubmit={e => submit(e, d => act({type:'save_analysis',job_id:job.id,expected_jd:job.jd,requirements:field(d,'requirements').split('\n').map(s => s.trim()).filter(Boolean)}, '岗位要求已保存为新版本。'), () => {setRequirementsDraft(previous=>{const next={...previous};delete next[job.id];return next;});setReadyTab('portfolio');})}>
+       <h2>这个岗位需要证明什么？</h2><p className="muted">从 JD 中提炼能力及重要性，每行一项，例如“核心：能把用户需求拆成可验证的产品方案”。可手工整理，也可让 AI 生成建议后由你决定是否应用。</p>
+       <div className="real-actions"><button type="button" className="button button-secondary" onClick={()=>{setAiIntent({sequence:Date.now(),jobId:job.id});setAssistantOpen(true);}}>AI 分析当前岗位</button><button type="button" className="text-button" onClick={()=>setRequirementsDraft(previous=>{const next={...previous};delete next[job.id];return next;})}>恢复已保存的要求</button></div>
+       <label>能力与证明要求<textarea name="requirements" required rows={6} maxLength={16000} value={requirementsDraft[job.id]??analysis?.requirements.join('\n')??''} onChange={e=>setRequirementsDraft(old=>({...old,[job.id]:e.target.value}))} placeholder="核心：…\n重要：…\n辅助：…" /></label>
        <button className="button button-primary">保存岗位要求，选择事实</button>
       </form>
      </>}
@@ -165,15 +175,22 @@ export default function WorkspaceApp({ service: provided }: { service?: CareerSe
     <h1>设置与数据</h1><div className="settings-list">
      <div><strong>用户工作区</strong><p className="storage-path" data-testid="personal-storage-path">{storage?.kind === 'desktop' ? storage.root : '桌面版启动后可查看实际工作区。'}</p><p>如果系统目录链接到其他磁盘，实际文件位于链接目标。个人数据不进入源码仓库。</p></div>
      <div><strong>保存状态</strong><p>职业资产、事实版本、岗位、组合、简历快照和投递记录通过桌面命令保存到 SQLite。演示入口使用独立的合成内存数据。</p></div>
-     <div><strong>模型连接</strong><p>尚未启用外部模型连接。当前可以手工整理岗位要求，并使用已确认事实生成内容；不会将你的资料发送到网络。</p></div>
+     <div><strong>发送范围</strong><p>只有主动发送才会请求模型，发送前可查看目标接口与本轮所选 JD、事实和问题。密钥只用于你指定接口的认证，不向页面返回完整值。</p></div>
      <div><strong>最终文件</strong><p>PDF 保存到工作区文件夹，数据库记录来源与完整性摘要。用于投递后永久冻结；变更内容请生成新版本并上传新文件。</p></div>
      <div><strong>数据迁移</strong><p>当前不提供自动跨设备迁移。需要备份时请关闭程序，再对完整工作区进行一致性备份，不只复制 app.db。</p></div>
     </div>
+    <AiSettings service={aiService} onSaved={()=>setConfigurationVersion(v=>v+1)}/>
    </div>}
    </fieldset>}
    <footer className="workspace-footer"><span><ShieldCheck size={14} />真实经历 · 显式确认 · 历史保留</span><span>{busy ? '正在保存…' : '个人工作区'}</span></footer>
    </main>
   </div>
+  <RealAssistant service={aiService} state={state} open={assistantOpen} onClose={()=>setAssistantOpen(false)} currentJob={job} pageLabel={navigation.find(n=>n.id===page)?.title??'设置与数据'} intent={aiIntent} configurationVersion={configurationVersion} onSettings={()=>setPage('settings')} onApplied={load} guardApply={target=>{
+   if(target.type==='job'&&target.jobId){
+    const current=state.analyses.filter(a=>a.jobId===target.jobId).at(-1)?.requirements.join('\n')??'';
+    if(requirementsDraft[target.jobId]!==undefined&&requirementsDraft[target.jobId]!==current)throw new Error('目标岗位有未保存的手工修改，请先保存或恢复原要求，再生成建议。');
+   }
+  }}/>
   {notice && <div className={'toast '+(notice.error?'toast-error':'')} role={notice.error?'alert':'status'}><span>{notice.text}</span><button aria-label="关闭提示" onClick={() => setNotice(null)}><X size={16}/></button></div>}
   {(modal || review || editFact) && <Modal title={review?'审查事实':editFact?'修订事实':modal==='asset'?'新增职业资产':'新增岗位'} onClose={() => {if(!busy){setModal(null);setReview(null);setEditFact(null);}}}><fieldset className="real-fields" disabled={busy || !service.native}>
    {modal==='asset' && <form className="form-stack" onSubmit={e => submit(e,d => act({type:'add_asset',organization:field(d,'organization'),role:field(d,'role'),title:field(d,'title'),summary:field(d,'summary')},'职业资产已保存；继续添加并审查事实。'),()=>{setModal(null);setPage('assets');})}><label>机构 / 团队<input name="organization" required maxLength={200}/></label><label>职位 / 角色<input name="role" maxLength={200}/></label><label>项目 / 贡献名称<input name="title" required maxLength={200}/></label><label>经历描述<textarea name="summary" required maxLength={12000} rows={5}/></label><p className="muted">描述作为背景保存，不自动成为可信事实。</p><button className="button button-primary">保存职业资产</button></form>}

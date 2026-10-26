@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { once } from 'node:events';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
+import { createServer as createHttpServer } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +19,27 @@ const port = server.address().port;
 await new Promise(resolve => server.close(resolve));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const exe = path.join(root, 'src-tauri/target/debug/career-copilot.exe');
+const withAi = process.argv.includes('--ai');
+const requests = [];
+const aiServer = withAi ? createHttpServer(async (req,res) => {
+ try {
+  assert.equal(req.url, '/v1/chat/completions');
+  assert.equal(req.headers.authorization, 'Bearer synthetic-desktop-test-key');
+  let body=''; for await (const chunk of req) body+=chunk;
+  const payload=JSON.parse(body);
+  const context=JSON.parse(payload.messages[1].content);
+  requests.push({payload,context});
+  assert.ok(!body.includes('test@example.invalid'));
+  assert.ok(!body.includes('测试大学'));
+  assert.ok(!body.includes('整理真实访谈材料，形成研究问题。'));
+  const analysis=payload.model==='synthetic-quality';
+  const output=analysis?{requirements:['核心：用户研究，JD 要求负责用户调研','重要：需求分析，JD 明确提到需求分析','重要：结论整理，JD 要求研究结论整理']}:{answer:'仅基于所选内容给出建议。',suggestedText:context.rewriteTargetRevisionId?'汇总 12 份访谈记录，整理研究问题清单':null};
+  res.writeHead(200,{'Content-Type':'application/json'});
+  res.end(JSON.stringify({choices:[{message:{content:JSON.stringify(output)}}]}));
+ } catch(error) {res.writeHead(500);res.end('Synthetic test failed');console.error(error.message);}
+}) : null;
+if(aiServer){aiServer.listen(0,'127.0.0.1');await once(aiServer,'listening');aiServer.unref();}
+const aiUrl=aiServer?'http://127.0.0.1:'+aiServer.address().port+'/v1':'';
 function makePdf() {
  const objects = ['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',null,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
  const stream='BT /F1 18 Tf 50 780 Td (Career Copilot smoke test) Tj ET';
@@ -80,6 +102,42 @@ for(let cycle=1;cycle<=2;cycle++){
    await dialog.getByLabel('岗位描述 JD').fill('负责用户调研、需求分析和研究结论整理。');
    await dialog.getByRole('button',{name:'保存目标岗位'}).click();
    await expect(dialog).not.toBeVisible();
+   if(withAi){
+    await page.getByRole('button',{name:'设置与数据',exact:true}).click();
+    await page.getByLabel('接口基础地址').fill(aiUrl);
+    await page.getByLabel('默认模型',{exact:true}).fill('synthetic-default');
+    await page.getByLabel('高质量模型',{exact:true}).fill('synthetic-quality');
+    await page.getByLabel('API Key',{exact:true}).fill('synthetic-desktop-test-key');
+    await page.getByRole('button',{name:'保存模型设置'}).click();
+    await expect(page.getByText('当前接口密钥已保存',{exact:true})).toBeVisible();
+    assert.equal(requests.length,0,'saving settings must not call the provider');
+    await expect(page.getByLabel('API Key',{exact:true})).toHaveValue('');
+    await page.getByRole('button',{name:'测试连接（不含个人资料）'}).click();
+    await expect(page.getByText('连接测试成功。未发送岗位、事实或个人联系方式。',{exact:true})).toBeVisible();
+    assert.equal(requests.length,1);
+    assert.deepEqual(Object.keys(requests[0].context),['question']);
+    await nav('求职工作区').click();
+    await page.getByRole('button',{name:'AI 分析当前岗位',exact:true}).click();
+    const panel=page.getByRole('complementary',{name:'个人 AI 助手面板'});
+    await expect(panel).toBeVisible();
+    assert.equal(requests.length,1,'opening panel must not call the provider');
+    await panel.getByRole('button',{name:'发送',exact:true}).click();
+    await expect(panel.getByRole('button',{name:'应用修改',exact:true})).toBeVisible();
+    assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('workspace_snapshot'))).analyses.length,0);
+    assert.equal(requests[1].context.job.description,'负责用户调研、需求分析和研究结论整理。');
+    assert.deepEqual(requests[1].context.facts,[]);
+    await page.getByLabel('能力与证明要求').fill('未保存的用户编辑');
+    await panel.getByRole('button',{name:'应用修改',exact:true}).click();
+    await expect(panel.getByRole('alert')).toContainText('未保存');
+    assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('workspace_snapshot'))).analyses.length,0);
+    await page.getByRole('button',{name:'恢复已保存的要求',exact:true}).click();
+    await panel.getByRole('button',{name:'应用修改',exact:true}).click();
+    await expect(panel.getByText('已应用',{exact:true})).toBeVisible();
+    await expect(page.getByLabel('能力与证明要求')).toHaveValue(/核心：用户研究/);
+    assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('workspace_snapshot'))).analyses.length,1);
+    await panel.getByRole('button',{name:'收起个人 AI 助手'}).click();
+    await expect(page.getByRole('switch',{name:'个人 AI 助手',exact:true})).not.toBeChecked();
+   }
    await page.getByLabel('能力与证明要求').fill('核心：用户研究与问题归纳\n重要：清晰的需求分析');
    await page.getByRole('button',{name:'保存岗位要求，选择事实'}).click();
    await page.getByRole('checkbox',{name:/用户调研项目/}).check();
@@ -100,10 +158,48 @@ for(let cycle=1;cycle<=2;cycle++){
    await page.getByLabel('投递渠道').fill('官网（仅测试登记）');
    await page.getByRole('button',{name:'我已投递，登记记录'}).click();
    await expect(page.getByText('已用于投递 · 永久冻结',{exact:true})).toBeVisible();
+   if(withAi){
+    await page.getByRole('switch',{name:'个人 AI 助手',exact:true}).click();
+    const panel=page.getByRole('complementary',{name:'个人 AI 助手面板'});
+    await panel.getByRole('combobox',{name:'AI 本轮任务'}).selectOption('assistant');
+    await expect(panel.getByRole('checkbox',{name:'发送所选岗位 JD',exact:true})).not.toBeChecked();
+    const target=await panel.getByRole('combobox',{name:'AI 事实修改目标'}).locator('option').nth(1).getAttribute('value');
+    await panel.getByRole('combobox',{name:'AI 事实修改目标'}).selectOption(target);
+    for(const apply of [false,true]){
+     await panel.getByLabel('发送给个人 AI 助手的问题').fill('请改写所选事实的措辞');
+     await panel.getByRole('button',{name:'发送',exact:true}).click();
+     await expect(panel.getByRole('button',{name:'应用修改',exact:true})).toBeVisible();
+     const before=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('workspace_snapshot'));
+     assert.equal(before.facts[0].verification,'USER_CONFIRMED');
+     assert.equal(before.facts[0].content,'整理 12 份访谈记录，形成问题清单');
+     await panel.getByRole('button',{name:apply?'应用修改':'暂不应用',exact:true}).click();
+     await expect(panel.getByText(apply?'已应用 · 待审查':'暂不应用 · 已保留原内容',{exact:true})).toBeVisible();
+    }
+    const after=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('workspace_snapshot'));
+    assert.equal(after.facts[0].verification,'UNCERTAIN');
+    assert.equal(after.facts[0].content,'汇总 12 份访谈记录，整理研究问题清单');
+    assert.equal(after.resumes[0].plan.items[0].text,'整理 12 份访谈记录，形成问题清单');
+    await panel.getByRole('button',{name:'收起个人 AI 助手'}).click();
+    await expect(panel).toBeHidden();
+    await page.getByRole('switch',{name:'个人 AI 助手',exact:true}).click();
+    await expect(panel.getByText('已应用 · 待审查',{exact:true})).toBeVisible();
+    await page.screenshot({path:path.join(runRoot,'ai-panel.png'),fullPage:true});
+    await panel.getByRole('button',{name:'收起个人 AI 助手'}).click();
+    await page.getByRole('button',{name:'设置与数据',exact:true}).click();
+    page.once('dialog',d=>d.accept());
+    await page.getByRole('button',{name:'删除当前接口密钥',exact:true}).click();
+    await expect(page.getByText('当前接口未保存密钥',{exact:true})).toBeVisible();
+    assert.equal(requests.length,4);
+    for(const r of requests.slice(2)){
+     assert.ok(!r.context.job,'unselected JD must not be sent');
+     assert.equal(r.context.facts.length,1);
+     assert.deepEqual(r.context.history,[]);
+    }
+   }
   }else{
    await nav('职业资产').click();
    await expect(page.getByRole('heading',{name:'用户调研项目',exact:true})).toBeVisible();
-   await expect(page.getByText('用户已确认',{exact:true})).toBeVisible();
+   await expect(page.locator('#real-main').getByText(withAi?'待审查':'用户已确认',{exact:true})).toBeVisible();
    await nav('版本资料库').click();
    await expect(page.getByRole('heading',{name:'投递记录'})).toBeVisible();
    await expect(page.getByText('smoke-final.pdf',{exact:false}).first()).toBeVisible();
@@ -130,4 +226,5 @@ for(let cycle=1;cycle<=2;cycle++){
   await sleep(300);
  }
 }
+if(aiServer)await new Promise(resolve=>aiServer.close(resolve));
 console.log('Artifacts and isolated test workspace: '+runRoot);
