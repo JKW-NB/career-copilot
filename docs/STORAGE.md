@@ -1,5 +1,13 @@
 # M0-T2 — Storage 与工作区位置
 
+## 当前个人工作区（2026-10-26）
+
+工作区已迁移到 D:\\CareerCopilotData\\workspace；原 C:\\Users\\HUAWEI\\AppData\\Local\\com.careercopilot.desktop\\workspace 是指向该位置的 Junction。设置页可能仍显示原路径，实际读写发生在 D 盘。原迁移备份暂留 C 盘。
+
+个人工作区现使用 Schema V2。首次启动在一致性备份后执行 0002 迁移，保存真实职业资产、事实修订、岗位、确认组合、Ready 内容、Final 文件元数据和投递记录。原内存 Demo 与个人数据库隔离。下文“三种位置”等 M0-T2 记录仍说明默认机制，不代表当前数据库只有基础元数据。
+
+进程可设置 CAREER_COPILOT_WORKSPACE 为绝对目录，用于显式工作区选择；未设置时遵循原 Tauri 应用数据目录。正式迁移应关闭应用并保留完整工作区，当前仍未提供跨设备导出/导入界面。
+
 ## 三种不同的位置
 
 1. **源代码仓库**：当前机器位于 `D:\DevTools\Codex\.chatgpt-projects\g-p-6a3bb234f6688191bcc82f1b494967b0\career-copilot`。它是独立 Git 仓库，可以复制或克隆到其他目录开发；该 Codex 项目目录不应是唯一备份。

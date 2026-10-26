@@ -3,6 +3,7 @@ import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { once } from 'node:events';
 import { existsSync } from 'node:fs';
+import { mkdtemp } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -23,12 +24,13 @@ await once(temporaryServer, 'listening');
 const port = temporaryServer.address().port;
 await new Promise(resolve => temporaryServer.close(resolve));
 let persistentWorkspace;
+const smokeRoot = await mkdtemp(path.join(os.tmpdir(), 'career-demo-smoke-'));
 
 // Only this test child gets a local debugging port. It is never part of app config.
 for (let cycle = 1; cycle <= 2; cycle++) {
   const child = spawn(dev ? process.execPath : executable, dev ? [process.env.npm_execpath, 'run', 'tauri', '--', 'dev', '--no-watch'] : [], {
     cwd: root, windowsHide: true,
-    env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-address=127.0.0.1 --remote-debugging-port=' + port },
+    env: { ...process.env, CAREER_COPILOT_WORKSPACE: path.join(smokeRoot, 'com.careercopilot.desktop', 'workspace'), WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-address=127.0.0.1 --remote-debugging-port=' + port },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const output = [];
@@ -60,6 +62,7 @@ for (let cycle = 1; cycle <= 2; cycle++) {
     }, { timeout: 15000 }).toBe(true);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    await page.getByRole('button', { name: '查看交互演示', exact: true }).click();
     await expect(page.getByRole('heading', { name: '岗位能力要求' })).toBeVisible();
     assert.ok(await page.evaluate(() => Boolean(window.__TAURI_INTERNALS__)), 'Page is not hosted by Tauri.');
     assert.equal(new URL(page.url()).hostname, dev ? '127.0.0.1' : 'tauri.localhost');
@@ -81,7 +84,7 @@ for (let cycle = 1; cycle <= 2; cycle++) {
     const workspace = await page.getByTestId('workspace-id').textContent();
     assert.ok(storagePath?.endsWith(path.join('com.careercopilot.desktop', 'workspace')), 'Unexpected isolated workspace path: ' + storagePath);
     assert.ok(existsSync(path.join(storagePath, 'app.db')), 'Desktop database was not created.');
-    assert.match(workspace, /Schema V1 · Workspace [a-f0-9]{32}/);
+    assert.match(workspace, /Schema V2 · Workspace [a-f0-9]{32}/);
     if (persistentWorkspace) assert.equal(workspace, persistentWorkspace, 'Workspace identity changed after restart.');
     persistentWorkspace = workspace;
     const toggle = page.getByRole('switch', { name: 'AI 助手' });

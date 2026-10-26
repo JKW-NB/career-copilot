@@ -1,5 +1,7 @@
 # Career Copilot — Agent Work Manual V1
 
+当前执行模式以 AGENTS.md 的 2026-10-26 授权为准：交付优先，按计划连续实现；本文件 Learning Gate 仅在 JKai 明确恢复学习驱动模式时启用。开发仍须保护 INV-01–08、执行真实测试和创建 Git commit。
+
 适用 Codex / Claude Code / OpenCode 等 Coding Agent。本文压缩并补齐原对话工作手册；执行顺序见 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
 
 ## 1. 开工顺序

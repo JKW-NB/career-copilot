@@ -6,6 +6,12 @@ Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 
 
 ## 1. 架构边界
 
+2026-10-26 个人工作区纵向切片：React `WorkspaceApp` → `career-service` → Rust `workspace_action/workspace_snapshot/attach_final_pdf/read_final_pdf` → SQLite 和受管文件。Migration 0002 按当前用例创建资产、追加事实修订、岗位要求版本、确认组合及子项、Ready 内容、真实 Final PDF、Application；这是 Schema V1 的增量落地，不代表 31 表蓝图及全部字段已实现。当前手工录入把一次输入作为 Experience → Project → Contribution，后续再扩展多项目编辑；岗位要求和内容计划保存 JSON 快照。暂不实现方向母版、能力 taxonomy、证据解析、访谈和真实模型。姓名、联系方式和教育信息由用户在编译时输入并冻结到 Content Plan；核心经历内容逐字来自允许 Fact Revision，不做未经验证的自然语言改写。
+
+事实的 review/revise/retract 携带 expected_revision_id，桌面事务重新检查当前版本、状态和资产可用性。高风险规则保守识别数字及职责主张，需要用户二次勾选；USER_CONFIRMED 不等于 EVIDENCE_VERIFIED。Ready 只追加，保存事实引用和文字，撤回原事实不重写旧快照。Final 先落盘再记录元数据；登记投递时重新读取并校验 SHA-256，事务内创建 Application 和永久使用锁。PDF 上传检查大小、文件头与结束标记，不宣称验证 PDF 全部语法或内容真实性。导出 HTML 会转义用户内容，不执行其中的标记。
+
+可选进程环境变量 CAREER_COPILOT_WORKSPACE 只接受绝对路径，用于隔离测试或明确迁移的数据根目录；未设置时仍用 app_local_data_dir/workspace。本机 C 盘目录已通过 Junction 指向 D 盘，程序继续沿原路径访问，数据实际位于 D 盘。测试不得使用个人真实工作区。模型网络模块暂未接入，自动审批要求明确敏感上下文的发送授权；不得通过其他调用方式绕过。
+
 AI Side Panel 实现合同：App 保存展开态与当前页面，Assistant 常驻挂载以保留收起后的会话；assistant-context 根据页面/Tab 枚举可编辑目标，点击内容可带入目标，发送时固定目标与上下文快照。FieldTarget 区分 description/bullet/requirement，字段修改经 DemoService 校验旧值和事实准入后写入；descriptions 只保存工作描述，不替代 Fact 或历史快照。Proposal 增加 undone 状态。单步 Undo 保存此次涉及的数据部分，撤销前核对应用后值；有后续修改时拒绝撤销，不触及 Ready/Final/Confirmed 历史。生产化继续复用现有业务用例，不把此内存实现当作数据库方案。
 
 冻结栈：Tauri + React + TypeScript + SQLite + Local File Storage + BYOK AI Gateway。无独立 Node 后端、云服务、队列、账户系统。M0-T1 实际固定 Tauri CLI 2.11.4、tauri 2.11.3、tauri-build 2.6.3、React 19.2.8、TypeScript 7.0.2 与 Rust 1.98.1，并提交 npm/Cargo 锁文件；后续升级单独验证。

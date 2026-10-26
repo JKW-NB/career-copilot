@@ -1,5 +1,7 @@
 # 四份核心文档一致性检查
 
+最新执行状态见第 11 节（2026-10-26）：用户已切换为交付优先，个人工作区与独立 Demo 并存。下文旧日期的“开发暂停”“尚未开始”属于对应历史阶段，不作为当前阻塞规则。
+
 审查日期：2026-09-07；M0-T1 状态复核：2026-09-08；M0-T2 状态复核：2026-09-09；Learning Map Sync 复核：2026-09-15；M0-T2 学习闭环复核：2026-09-16。结论：规格基线可交给 Coding Agent 逐 Task 实施；Tauri 桌面初始化和 SQLite Storage 基础已经验收，演示业务数据仍在内存中，真实模型尚未实现。
 
 ## 1. 来源与取舍
@@ -102,3 +104,11 @@ AGENTS、WORK_MANUAL 与 IMPLEMENTATION_PLAN 统一规定：每个 Task 先只�
 M0-T1 已按例外流程完成 16/16 学习同步，并使用既有桌面代码、配置和测试补齐 Implementation Reflection，没有重写产品代码。
 
 2026-09-16，M0-T2 完成 14/14 学习同步，并使用既有 Storage、Migration 和合同测试补齐 Implementation Reflection，没有重写产品代码。知识写回 Workspace / Persistence、SQLite、Foreign Key、Transaction、Migration 和 File Storage 节点；Primary Key 与完整 Data Model 仍保持未学习。M0-T3 继续受 Learning Gate 约束，不能自动开始。
+
+## 11. 求职交付模式与个人工作区
+
+2026-10-26，用户明确授权从学习优先改为按计划交付。AGENTS、WORK_MANUAL、IMPLEMENTATION_PLAN 已记录该模式；LEARNING_MAP 保留真实学习进度，不把已实现代码标记为用户学过。M0-T3 受信任业务入口与手工求职纵向切片已通过验证，未将 M1–M7 各完整 Task 或 31 表蓝图标记为全部实现。
+
+PRODUCT_SPEC 说明个人工作区和演示隔离；TECH_SPEC 说明 Schema V2 增量、事实追加修订、草稿/Ready 边界、PDF 签名及 hash 校验、永久投递锁；DELIVERY 列出实际能力、限制和使用路线。原 INV-01–08、53 个 Task 与 31 表蓝图均保留。未实现真实 AI、证据解析、方向母版和自动组合优化，不对这些功能宣称生产验收。
+
+验证结果：20 文档测试、30 单元测试、19 浏览器流程；16 Rust 合同测试、前端类型/构建、Windows 桌面构建；个人工作区和原 Demo 各双轮真实桌面测试通过。测试全部使用合成材料与隔离工作区。外部模型模块因数据发送授权不足被自动审批拒绝，保持未接入，等待明确授权。

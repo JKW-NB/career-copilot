@@ -332,4 +332,6 @@ M0-T1 已完成第一轮 `16/16` 学习。Learning Map Sync 已将本轮知识�
 
 M0-T2 已完成第一轮 `14/14` 学习。Learning Map Sync 已将工作区、SQLite、连接、外键、事务、迁移、备份和文件可靠性写回数据保存节点；Implementation Reflection 已使用现有 Storage 代码、迁移、配置和合同测试补齐真实落点。该状态表示完成当前深度的知识—代码闭环，不表示 JKai 永久掌握。
 
-仍待后续深化：Primary Key、完整 Data Model、SQL CRUD/Index、SQLite 锁与 WAL、复杂迁移和正式 Export/Import。当前停止，不自动进入 M0-T3 学习或实现。
+仍待后续深化：Primary Key、完整 Data Model、SQL CRUD/Index、SQLite 锁与 WAL、复杂迁移和正式 Export/Import。
+
+2026-10-26：JKai 将目标切换为交付优先，暂停逐 Part 教学。M0-T3 学习停在 7/12，Part 8 尚未完成理解检查；Application Service 不标记为已完成学习。代码实施状态以 IMPLEMENTATION_PLAN 和 docs/DELIVERY.md 为准，不能用开发完成替代学习证据。未来恢复学习时继续既有进度。

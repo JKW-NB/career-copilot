@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'LEARNING_MAP.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md', 'docs/STORAGE.md'];
+const names = ['PRODUCT_SPEC.md', 'TECH_SPEC.md', 'WORK_MANUAL.md', 'IMPLEMENTATION_PLAN.md', 'LEARNING_MAP.md', 'AGENTS.md', 'docs/CONSISTENCY_CHECK.md', 'docs/DESKTOP_SETUP.md', 'docs/STORAGE.md', 'README.md', 'docs/DELIVERY.md', 'docs/PORTFOLIO.md'];
 const docs = Object.fromEntries(names.map(name => [name, readFileSync(resolve(root, name), 'utf8')]));
 const baselineTaskCounts = [5, 5, 6, 5, 5, 6, 7, 6, 6];
 const expectedTasks = baselineTaskCounts.flatMap((count, milestone) =>
@@ -84,7 +84,7 @@ test('learning map is a progressive knowledge tree instead of a task matrix', ()
   assert.match(learning, /易混淆点：/);
 });
 
-test('learning map sync gate blocks implementation and the next task', () => {
+test('learning workflow remains available without overriding explicit delivery authorization', () => {
   const agents = docs['AGENTS.md'];
   const manual = docs['WORK_MANUAL.md'];
   const plan = docs['IMPLEMENTATION_PLAN.md'];
@@ -103,7 +103,11 @@ test('learning map sync gate blocks implementation and the next task', () => {
   assert.match(learning, /当前学习状态/);
   assert.match(learning, /M0-T1 已完成第一轮 `16\/16` 学习/);
   assert.match(learning, /M0-T2 已完成第一轮 `14\/14` 学习/);
-  assert.match(learning, /不自动进入 M0-T3 学习或实现/);
+  assert.match(learning, /M0-T3 学习停在 7\/12/);
+  assert.match(agents, /交付优先模式/);
+  assert.match(agents, /允许沿主线连续推进/);
+  assert.match(manual, /Learning Gate 仅在 JKai 明确恢复学习驱动模式时启用/);
+  assert.match(plan, /实际开发不再受这些学习进度阻塞/);
   assert.doesNotMatch(learning, /M0-T1 第一轮讲解，JKai 尚未确认理解/);
 });
 

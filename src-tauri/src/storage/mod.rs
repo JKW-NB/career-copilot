@@ -10,12 +10,19 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-const LATEST_SCHEMA_VERSION: u32 = 1;
-const DEFAULT_MIGRATIONS: &[Migration] = &[Migration::new(
-    1,
-    "storage foundation",
-    include_str!("../../migrations/0001_storage.sql"),
-)];
+const LATEST_SCHEMA_VERSION: u32 = 2;
+const DEFAULT_MIGRATIONS: &[Migration] = &[
+    Migration::new(
+        1,
+        "storage foundation",
+        include_str!("../../migrations/0001_storage.sql"),
+    ),
+    Migration::new(
+        2,
+        "career workspace",
+        include_str!("../../migrations/0002_career_workspace.sql"),
+    ),
+];
 static NEXT_PENDING_FILE: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Debug)]

@@ -1,5 +1,7 @@
 # Career Copilot — Product Spec V1
 
+2026-10-26 求职可用版：桌面新增独立个人工作区，可手工录入职业资产、审查事实、建立岗位要求、确认事实组合、冻结简历内容、导出排版稿并登记真实最终 PDF 和投递。当前内容采用已确认事实原文组合；真实 AI、材料解析、访谈和自动能力分析尚未交付。现有 Demo 独立保留，不能混入个人工作区。具体边界见 [交付说明](docs/DELIVERY.md)。
+
 基线：2026-09-07；2026-09-08 补充用户反馈并完成 M0-T1；2026-09-09 完成 M0-T2 Storage 基础设施。状态：已有可启动的 Tauri 桌面应用、SQLite 工作区和浏览器交互 Demo；现有演示资产尚未接入持久化，真实 AI 尚未实现。来源及一致性结论见 [一致性检查](docs/CONSISTENCY_CHECK.md)。本文负责产品行为；存储、枚举与执行约束分别见 [TECH_SPEC.md](TECH_SPEC.md)、[WORK_MANUAL.md](WORK_MANUAL.md)、[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。
 
 ## 1. 目标与范围
