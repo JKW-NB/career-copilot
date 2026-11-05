@@ -1,4 +1,5 @@
 pub mod ai;
+mod reactive_resume;
 pub mod storage;
 pub mod workspace;
 
@@ -115,7 +116,12 @@ pub fn run() {
             delete_ai_key,
             generate_ai,
             apply_ai_proposal,
-            dismiss_ai_proposal
+            dismiss_ai_proposal,
+            reactive_resume::rr_status,
+            reactive_resume::rr_configure,
+            reactive_resume::rr_remove_key,
+            reactive_resume::rr_open,
+            reactive_resume::rr_archive
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

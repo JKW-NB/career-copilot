@@ -13,6 +13,7 @@
     "test:desktop": "node tests/desktop/smoke.mjs",
     "test:desktop:workspace": "node tests/desktop/workspace.mjs",
     "test:desktop:ai": "node tests/desktop/workspace.mjs --ai",
+    "test:desktop:reactive-resume": "node tests/desktop/workspace.mjs --rr",
     "dev": "vite --configLoader runner --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite --configLoader runner build",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",

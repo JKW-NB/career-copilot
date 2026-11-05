@@ -20,6 +20,7 @@ await new Promise(resolve => server.close(resolve));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const exe = path.join(root, 'src-tauri/target/debug/career-copilot.exe');
 const withAi = process.argv.includes('--ai');
+const withRr = process.argv.includes('--rr');
 const requests = [];
 const aiServer = withAi ? createHttpServer(async (req,res) => {
  try {
@@ -52,6 +53,49 @@ function makePdf() {
 }
 const pdfPath = path.join(runRoot,'smoke-final.pdf');
 await writeFile(pdfPath, makePdf());
+let imports = 0;
+let exports = 0;
+let importedSnapshot;
+let editorVisits = 0;
+const rrServer = withRr ? createHttpServer(async (req, res) => {
+ try {
+  if (req.url === '/favicon.ico') { res.statusCode = 204; return res.end(); }
+  if (req.url === '/builder/test-resume') {
+   editorVisits++;
+   return res.end('Synthetic Reactive Resume editor');
+  }
+  assert.equal(req.headers['x-api-key'], 'synthetic-rr-key');
+  if (req.url === '/api/openapi/resumes/file-imports') {
+   assert.equal(req.method, 'POST');
+   const chunks = [];
+   for await (const chunk of req) chunks.push(chunk);
+   const body = Buffer.concat(chunks).toString('utf8');
+   assert.match(body, /name="format"\r\n\r\nJSON_RESUME/);
+   assert.match(body, /整理 12 份访谈记录，形成问题清单/);
+   assert.doesNotMatch(body, /revisionId|岗位描述 JD/);
+   importedSnapshot = JSON.parse(body.match(/\r\n\r\n(\{[^\r\n]*\})\r\n--/)?.[1] ?? '');
+   imports++;
+   res.setHeader('Content-Type', 'application/json');
+   return res.end(JSON.stringify('test-resume'));
+  }
+  assert.equal(req.url, '/api/openapi/resumes/test-resume/exports/pdf');
+  assert.equal(req.method, 'GET');
+  exports++;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.end(exports === 1 ? 'invalid PDF' : makePdf());
+ } catch (error) {
+  res.statusCode = 500;
+  res.end('Synthetic request assertion failed');
+  console.error(error.message);
+ }
+}) : null;
+if (rrServer) {
+ rrServer.listen(0, '127.0.0.1');
+ await once(rrServer, 'listening');
+ rrServer.unref();
+}
+const rrOrigin = rrServer ? 'http://127.0.0.1:' + rrServer.address().port : '';
+const finalFilename = withRr ? 'reactive-resume.pdf' : 'smoke-final.pdf';
 let identity;
 for(let cycle=1;cycle<=2;cycle++){
  const child=spawn(exe,[],{cwd:root,windowsHide:true,env:{...process.env,CAREER_COPILOT_WORKSPACE:path.join(runRoot,'workspace'),WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:'--remote-debugging-address=127.0.0.1 --remote-debugging-port='+port},stdio:['ignore','pipe','pipe']});
@@ -80,6 +124,15 @@ for(let cycle=1;cycle<=2;cycle++){
   assert.equal(storage.root,path.join(runRoot,'workspace'));
   const nav=name=>page.getByRole('navigation',{name:'个人工作区导航'}).getByRole('button',{name,exact:true});
   if(cycle===1){
+   if (withRr) {
+    await page.getByRole('button', { name: '设置与数据', exact: true }).click();
+    await page.getByLabel('Reactive Resume 站点').fill(rrOrigin);
+    await page.getByLabel('Reactive Resume API Key').fill('synthetic-rr-key');
+    await page.getByRole('button', { name: '保存 Reactive Resume 设置' }).click();
+    await expect(page.getByText('Reactive Resume 设置已保存。')).toBeVisible();
+    assert.equal(imports, 0);
+    await nav('今日概览').click();
+   }
    await page.getByRole('button',{name:'新增职业资产',exact:true}).click();
    const dialog=page.getByRole('dialog');
    await dialog.getByLabel('机构 / 团队').fill('作品集测试团队');
@@ -162,9 +215,32 @@ for(let cycle=1;cycle<=2;cycle++){
    const downloadPromise=page.waitForEvent('download');
    await page.getByRole('button',{name:'导出排版稿',exact:true}).click();
    await (await downloadPromise).saveAs(path.join(runRoot,'resume.html'));
+   if (withRr) {
+    const openEditor = page.getByRole('button', { name: '在 Reactive Resume 中排版', exact: true });
+    const archive = page.getByRole('button', { name: '取回 PDF 并归档', exact: true });
+    page.once('dialog', dialog => dialog.dismiss());
+    await openEditor.click();
+    assert.equal(imports, 0);
+    for (let attempt = 0; attempt < 2; attempt++) {
+     page.once('dialog', dialog => dialog.accept());
+     await openEditor.click();
+     await expect(page.getByText('已请求打开排版副本。排版完成后，可回到这里取回 PDF。')).toBeVisible();
+    }
+    assert.equal(imports, 1);
+    await expect.poll(() => editorVisits).toBeGreaterThan(0);
+    assert.deepEqual(importedSnapshot, exported);
+    page.once('dialog', dialog => dialog.accept());
+    await archive.click();
+    await expect(page.getByText(/请选择完整的 PDF 文件/)).toBeVisible();
+    assert.equal((await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('workspace_snapshot'))).files.length, 0);
+    page.once('dialog', dialog => dialog.accept());
+    await archive.click();
+    await expect(page.getByText('PDF 已归档到此内容版本。')).toBeVisible();
+    assert.equal(exports, 2);
+   }
    await page.getByRole('tab',{name:'最终文件',exact:true}).click();
-   await page.getByLabel('上传最终 PDF',{exact:true}).setInputFiles(pdfPath);
-   await expect(page.getByRole('heading',{name:/smoke-final.pdf/})).toBeVisible();
+   if (!withRr) await page.getByLabel('上传最终 PDF',{exact:true}).setInputFiles(pdfPath);
+   await expect(page.getByRole('heading',{name:finalFilename,exact:true})).toBeVisible();
    await page.getByLabel('投递渠道').fill('官网（仅测试登记）');
    await page.getByRole('button',{name:'我已投递，登记记录'}).click();
    await expect(page.getByText('已用于投递 · 永久冻结',{exact:true})).toBeVisible();
@@ -212,7 +288,7 @@ for(let cycle=1;cycle<=2;cycle++){
    await expect(page.locator('#real-main').getByText(withAi?'待审查':'用户已确认',{exact:true})).toBeVisible();
    await nav('版本资料库').click();
    await expect(page.getByRole('heading',{name:'投递记录'})).toBeVisible();
-   await expect(page.getByText('smoke-final.pdf',{exact:false}).first()).toBeVisible();
+   await expect(page.getByText(finalFilename,{exact:false}).first()).toBeVisible();
    await page.locator('details').first().locator('summary').click();
    await expect(page.locator('.real-paper')).toContainText('12 份访谈记录');
    await page.getByRole('combobox',{name:'投递状态',exact:true}).selectOption('VOIDED');
@@ -220,6 +296,13 @@ for(let cycle=1;cycle<=2;cycle++){
    await expect(page.getByRole('combobox',{name:'投递状态',exact:true})).toHaveValue('VOIDED');
    const snapshot=await page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('workspace_snapshot'));
    assert.equal(snapshot.files[0].used,1);
+   if (withRr) {
+    assert.equal(snapshot.files[0].resumeId, snapshot.resumes[0].id);
+    await page.getByRole('button', { name: '设置与数据', exact: true }).click();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '删除 Reactive Resume 密钥' }).click();
+    await expect(page.getByText('Reactive Resume 密钥已移除。')).toBeVisible();
+   }
    assert.equal(snapshot.applications[0].status,'VOIDED');
    assert.equal(snapshot.resumes.length,1);
   }
@@ -237,4 +320,8 @@ for(let cycle=1;cycle<=2;cycle++){
  }
 }
 if(aiServer)await new Promise(resolve=>aiServer.close(resolve));
+if (rrServer) await new Promise(resolve => {
+ rrServer.close(resolve);
+ rrServer.closeAllConnections();
+});
 console.log('Artifacts and isolated test workspace: '+runRoot);
