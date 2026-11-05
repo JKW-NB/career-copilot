@@ -1,5 +1,7 @@
 # Career Copilot — Technical Spec V1
 
+2026-11-05：新增纯本地 JSON Resume 导出适配，只接受 CONTENT_READY 快照，不迁移数据库；按机构/项目/角色分组，原文事实进入 highlights，自由联系方式和教育文本保留到摘要。参见 [互通说明](docs/REACTIVE_RESUME.md)。
+
 基线：2026-09-07，交互与 M0-T1 补充：2026-09-08，Storage 基础补充：2026-09-09，个人工作区与模型连接：2026-10-26。本文约束正式实现；当前有独立的持久化个人工作区、桌面模型连接和内存 Demo。[产品行为](PRODUCT_SPEC.md)为业务依据；[执行计划](IMPLEMENTATION_PLAN.md)规定分阶段落地，不能在 M0 一次建完所有业务表。
 
 Demo 补充合同：内存 DemoState 保存资产草稿、可编辑 Requirement 和 Proposal。Proposal 包含类型、目标、预期旧值、修改内容与 pending/applied/dismissed 状态；应用在服务内重新检查目标和旧值，过期或重复应用拒绝，失败不发布任何改动。资产描述不冒充 Fact。Confirmed Portfolio 同时保存 requirements 快照；调整重要性或纳入范围后须重新确认，新内容版本不覆盖旧 Ready。聊天上下文是用户选择的本轮快照，发送后仍可回看，刷新/重置清除；Demo 不向外部发送。正式 AI Assistant 复用现有 Gateway 与业务用例，新增事实继续走 Fact Extraction/Review，不另建平行业务系统或聊天数据库。

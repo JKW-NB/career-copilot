@@ -7,6 +7,7 @@ import { Modal } from './shared';
 import { createAiService, type AiService } from '../application/ai-service';
 import { AiSettings } from './AiSettings';
 import { RealAssistant, type AiIntent } from './RealAssistant';
+import { reactiveResumeJson, reactiveResumeFilename } from '../application/reactive-resume';
 import './real-ai.css';
 import './workspace.css';
 type Page = 'overview' | 'assets' | 'jobs' | 'library' | 'settings';
@@ -150,7 +151,7 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
        <label>教育背景（可选，自行核实）<textarea name="education" rows={2} maxLength={4000} defaultValue={latestResume?.plan.education} /></label>
        <button className="button button-primary">生成并保存内容版本</button>
       </form>}
-      {latestResume && <><div className="real-actions"><span className="badge badge-green">内容 V{latestResume.version} · {latestResume.status === 'CONTENT_READY' ? '已就绪' : '待确认草稿'}</span><button className="button button-secondary" onClick={() => download(resumeMarkdown(latestResume),'text/markdown;charset=utf-8','resume-v'+latestResume.version+'.md')}>导出 Markdown</button><button className="button button-secondary" onClick={() => download(resumeHtml(latestResume),'text/html;charset=utf-8','resume-v'+latestResume.version+'.html')}>导出排版稿</button>{latestResume.status === 'DRAFT' && <button className="button button-primary" onClick={() => void act({type:'mark_ready',resume_id:latestResume.id},'内容已确认就绪并冻结。')}>确认内容就绪</button>}<button className="text-button" onClick={() => setReadyTab('final')}>登记最终 PDF <ArrowRight size={15} /></button></div><ResumePreview resume={latestResume} /></>}
+      {latestResume && <><div className="real-actions"><span className="badge badge-green">内容 V{latestResume.version} · {latestResume.status === 'CONTENT_READY' ? '已就绪' : '待确认草稿'}</span><button className="button button-secondary" onClick={() => download(resumeMarkdown(latestResume),'text/markdown;charset=utf-8','resume-v'+latestResume.version+'.md')}>导出 Markdown</button><button className="button button-secondary" onClick={() => download(resumeHtml(latestResume),'text/html;charset=utf-8','resume-v'+latestResume.version+'.html')}>导出排版稿</button>{latestResume.status === 'DRAFT' && <button className="button button-primary" onClick={() => void act({type:'mark_ready',resume_id:latestResume.id},'内容已确认就绪并冻结。')}>确认内容就绪</button>}<button className="text-button" onClick={() => setReadyTab('final')}>登记最终 PDF <ArrowRight size={15} /></button></div><div className="real-card"><h3>使用 Reactive Resume 排版</h3><p>导出已就绪版本，在 Reactive Resume 的导入入口选择 JSON Resume 格式。联系方式和教育背景按原文保留在摘要中，可在排版时整理；缺失日期不会自动补全。</p><button className="button button-secondary" disabled={latestResume.status !== 'CONTENT_READY'} onClick={() => download(reactiveResumeJson(latestResume),'application/json;charset=utf-8',reactiveResumeFilename(latestResume))}>导出到 Reactive Resume</button><p className="muted">导出只保存本机文件。排版后将 PDF 登记回此内容版本；如果修改了事实文字，请先回到职业资产修订并重新确认内容。</p></div><ResumePreview resume={latestResume} /></>}
      </>}
      {readyTab === 'final' && <>
       {!latestResume ? <Empty>请先生成内容并确认就绪。</Empty> : <div className="real-card"><h2>保存真实最终文件</h2><p>将排版稿在浏览器中打开并打印为 PDF，或在你惯用的工具中排版。检查内容后，把最终 PDF 登记在这里。</p>

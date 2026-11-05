@@ -1,5 +1,7 @@
 # Career Copilot — Product Spec V1
 
+2026-11-05：新增“导出到 Reactive Resume”，将已就绪内容保存为它支持的 JSON Resume 文件，供外部排版后回存 PDF；API 自动回传与真实排版验收尚未完成。参见 [互通说明](docs/REACTIVE_RESUME.md)。
+
 2026-10-26 求职可用版：桌面个人工作区支持手工录入职业资产、审查事实、建立岗位要求、确认组合、冻结简历内容、导出排版稿并登记最终 PDF 和投递。另支持用户配置模型接口和密钥，主动发送选中的 JD/事实/问题进行分析或生成改写建议；预览并明确应用后才写入，事实改写重新进入待审查状态。兼容接口已用本机模拟服务验收，真实服务效果待用户配置后验证。材料解析、访谈和自动能力画像尚未交付。Demo 独立保留。具体边界见 [交付说明](docs/DELIVERY.md)。
 
 基线：2026-09-07；2026-09-08 完成 M0-T1；2026-09-09 完成 M0-T2。历史来源及一致性结论见 [一致性检查](docs/CONSISTENCY_CHECK.md)，当前实现以上述交付说明为准。本文负责产品行为；存储、枚举与执行约束分别见 [TECH_SPEC.md](TECH_SPEC.md)、[WORK_MANUAL.md](WORK_MANUAL.md)、[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。

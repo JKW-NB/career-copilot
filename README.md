@@ -1,5 +1,7 @@
 # Career Copilot
 
+2026-11-05：新增“导出到 Reactive Resume”，将已就绪内容保存为它支持的 JSON Resume 文件，供外部排版后回存 PDF；API 自动回传与真实排版验收尚未完成。参见 [互通说明](docs/REACTIVE_RESUME.md)。
+
 一个围绕真实职业事实组织求职材料的本地桌面工作台。
 
 ## 当前可以使用

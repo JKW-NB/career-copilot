@@ -1,5 +1,7 @@
 # Career Copilot — MVP Implementation Plan V1
 
+2026-11-05：新增“导出到 Reactive Resume”，将已就绪内容保存为它支持的 JSON Resume 文件，供外部排版后回存 PDF；API 自动回传与真实排版验收尚未完成。参见 [互通说明](docs/REACTIVE_RESUME.md)。
+
 **Goal**：完成 Local-first Desktop 的 Career Assets → Job Strategy → Portfolio → Resume Content → Final PDF → Application 闭环。
 
 **Architecture**：Career / Job / Resume 业务用例通过 AI Gateway 和 Storage，AI 提案、代码约束、历史快照追加写。技术栈 Tauri、React、TypeScript、SQLite、本地文件、BYOK。

@@ -1,0 +1,16 @@
+{
+  "basics": {
+    "name": "测试求职者",
+    "summary": "联系方式：\ntest@example.invalid\n\n教育背景：\n测试大学"
+  },
+  "work": [
+    {
+      "name": "作品集测试团队",
+      "position": "产品实习",
+      "summary": "用户调研项目",
+      "highlights": [
+        "整理 12 份访谈记录，形成问题清单"
+      ]
+    }
+  ]
+}
