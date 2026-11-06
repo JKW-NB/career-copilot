@@ -120,6 +120,7 @@ pub fn run() {
             reactive_resume::rr_status,
             reactive_resume::rr_configure,
             reactive_resume::rr_remove_key,
+            reactive_resume::rr_test_connection,
             reactive_resume::rr_open,
             reactive_resume::rr_archive
         ])

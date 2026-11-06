@@ -30,6 +30,15 @@ export function ReactiveResumeSettings({ native }: { native: boolean }) {
    <label>Reactive Resume 站点<input name="site" type="url" required defaultValue={connection.origin ?? 'https://rxresu.me'} /></label>
    <label>Reactive Resume API Key<input name="apiKey" type="password" autoComplete="new-password" maxLength={512} placeholder={connection.hasKey ? '已保存，留空保留该站点密钥' : '输入该站点的 API Key'} /></label>
    <button className="button button-primary" disabled={busy}>保存 Reactive Resume 设置</button>
+   {connection.hasKey && <button className="button button-secondary" type="button" disabled={busy} onClick={async () => {
+    setBusy(true);
+    setNotice('');
+    try {
+     await invoke('rr_test_connection', { expectedOrigin: connection.origin });
+     setNotice('连接正常，密钥可读取账号资料。创建副本仍需写权限。');
+    } catch (error) { setNotice(errorMessage(error)); }
+    finally { setBusy(false); }
+   }}>测试已保存的连接</button>}
    {connection.hasKey && <button className="text-button" type="button" disabled={busy} onClick={async () => {
     if (!window.confirm('删除此站点保存在本机的 API Key？')) return;
     setBusy(true);

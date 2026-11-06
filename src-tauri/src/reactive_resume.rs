@@ -210,6 +210,45 @@ fn client() -> AppResult<Client> {
         .map_err(|_| fail("CONNECTION", "无法初始化 Reactive Resume 连接。"))
 }
 
+#[tauri::command]
+pub async fn rr_test_connection(
+    storage: State<'_, Storage>,
+    expected_origin: String,
+) -> AppResult<()> {
+    let site = selected_site(&storage, &expected_origin)?;
+    let response = client()?
+        .get(format!("{site}/api/openapi/resumes?limit=1"))
+        .header("x-api-key", secret(&storage, &site)?)
+        .send()
+        .await
+        .map_err(|_| {
+            fail(
+                "CONNECTION",
+                "无法连接 Reactive Resume，请检查站点地址和网络。",
+            )
+        })?;
+    if matches!(response.status().as_u16(), 401 | 403) {
+        return Err(fail(
+            "AUTH",
+            "Reactive Resume 拒绝访问，请检查当前站点的 API Key。",
+        ));
+    }
+    if !response.status().is_success() {
+        return Err(fail(
+            "CONNECTION",
+            "站点没有返回可用的 Reactive Resume 简历接口。",
+        ));
+    }
+    let bytes = read_limited(response, 64 * 1024).await?;
+    if !serde_json::from_slice::<Value>(&bytes).is_ok_and(|value| value.is_array()) {
+        return Err(fail(
+            "INVALID_RESPONSE",
+            "站点返回了非预期内容，请确认填写的是 Reactive Resume 站点根地址。",
+        ));
+    }
+    Ok(())
+}
+
 async fn read_limited(mut response: Response, limit: usize) -> AppResult<Vec<u8>> {
     let mut result = Vec::new();
     while let Some(chunk) = response

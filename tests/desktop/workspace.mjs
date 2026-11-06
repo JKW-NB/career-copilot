@@ -54,6 +54,7 @@ function makePdf() {
 const pdfPath = path.join(runRoot,'smoke-final.pdf');
 await writeFile(pdfPath, makePdf());
 let imports = 0;
+let connectionChecks = 0;
 let exports = 0;
 let importedSnapshot;
 let editorVisits = 0;
@@ -63,6 +64,16 @@ const rrServer = withRr ? createHttpServer(async (req, res) => {
   if (req.url === '/builder/test-resume') {
    editorVisits++;
    return res.end('Synthetic Reactive Resume editor');
+  }
+  if (req.url === '/api/openapi/resumes?limit=1') {
+   assert.equal(req.method, 'GET');
+   connectionChecks++;
+   if (req.headers['x-api-key'] !== 'synthetic-rr-key') {
+    res.statusCode = 401;
+    return res.end();
+   }
+   res.setHeader('Content-Type', 'application/json');
+   return res.end('[]');
   }
   assert.equal(req.headers['x-api-key'], 'synthetic-rr-key');
   if (req.url === '/api/openapi/resumes/file-imports') {
@@ -127,9 +138,18 @@ for(let cycle=1;cycle<=2;cycle++){
    if (withRr) {
     await page.getByRole('button', { name: '设置与数据', exact: true }).click();
     await page.getByLabel('Reactive Resume 站点').fill(rrOrigin);
+    await page.getByLabel('Reactive Resume API Key').fill('synthetic-invalid-key');
+    await page.getByRole('button', { name: '保存 Reactive Resume 设置' }).click();
+    await expect(page.getByText('Reactive Resume 设置已保存。')).toBeVisible();
+    const testConnection = page.getByRole('button', { name: '测试已保存的连接' });
+    await testConnection.click();
+    await expect(page.getByText(/Reactive Resume 拒绝访问/)).toBeVisible();
     await page.getByLabel('Reactive Resume API Key').fill('synthetic-rr-key');
     await page.getByRole('button', { name: '保存 Reactive Resume 设置' }).click();
     await expect(page.getByText('Reactive Resume 设置已保存。')).toBeVisible();
+    await testConnection.click();
+    await expect(page.getByText('连接正常，密钥可读取账号资料。创建副本仍需写权限。')).toBeVisible();
+    assert.equal(connectionChecks, 2);
     assert.equal(imports, 0);
     await nav('今日概览').click();
    }
