@@ -8,7 +8,7 @@
 
 <p align="center">Windows 桌面应用 · Tauri / Rust · React / TypeScript · SQLite</p>
 
-[快速开始](#快速开始) · [求职流程](#求职流程) · [连接服务](#连接服务) · [开发与验证](#开发与验证)
+[快速开始](#快速开始) · [求职流程](#求职流程) · [产品设计与交付](#产品设计与交付) · [开源致谢](#开源致谢) · [连接服务](#连接服务)
 
 每准备一个新岗位，你都可以从已经审查的职业事实中重新选材。Career Copilot 保存事实修订、简历内容快照、最终 PDF 和投递记录，让你能回看一份简历写了什么、引用了哪些事实、最终发出去的是哪个文件。
 
@@ -30,6 +30,21 @@ flowchart LR
 | **确定简历版本** | 生成内容快照并确认就绪。后来修订事实时，既有快照仍保留原文与引用。 |
 | **排版并归档** | 在 Reactive Resume 中打开已确认版本的排版副本，完成后取回 PDF。也可导出 Markdown、HTML 或 JSON Resume，再手动上传最终 PDF。 |
 | **记录投递** | 手动登记投递渠道和状态。PDF 通过 SHA-256 核对完整性，已用于投递的文件与版本绑定会冻结。 |
+
+## 产品设计与交付
+
+这个项目起于两个实际需求：为不同岗位反复写简历时，能复用已经核实的经历；投递之后，能查回当时发出的具体版本。我把这两个需求拆成可验收的产品规则：
+
+- **经历可以复用，改写需要复核。** 记录事实及其修订，为岗位选择已确认的事实。AI 提出的改写经过用户确认后进入待审查状态。
+- **版本可以回查。** 确认简历时保留文字和事实引用，登记投递时绑定最终 PDF。后续修改形成新版本，旧投递仍可追溯。
+- **排版可以独立演进。** 先跑通手工选材、导出和归档，再通过 JSON 交换验证字段映射，随后接入排版 API。用合成数据验证副本复用、无效 PDF 拒绝和重启后的归档记录。
+
+需求、工程约束和交付验证分别记录在[产品规格](PRODUCT_SPEC.md)、[实施计划](IMPLEMENTATION_PLAN.md)和[交付记录](docs/DELIVERY.md)。
+
+## 开源致谢
+
+- **Reactive Resume 团队和贡献者**提供简历编辑器、模板与 PDF 导出。Career Copilot 参考其导入格式，并调用其公开 REST API 创建排版副本、取回 PDF。Career Copilot 负责职业事实审查、岗位选材、本地版本关联和投递归档。[上游项目](https://github.com/reactive-resume/reactive-resume) · [API 文档](https://docs.rxresu.me/guides/using-the-api)
+- **GitHub Awesome Copilot 的贡献者**提供了 README 写作参考。本页的导览与快速开始参考了其 `create-readme` 技能。[技能源码](https://github.com/github/awesome-copilot/blob/main/skills/create-readme/SKILL.md)
 
 ## 快速开始
 
