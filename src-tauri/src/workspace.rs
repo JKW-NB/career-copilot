@@ -784,6 +784,44 @@ pub fn refresh_evidence(storage: &Storage, contribution_id: &str) -> AppResult<V
     Ok(json!({"added":added,"existing":existing,"skipped":skipped,"limited":limited}))
 }
 
+pub fn refresh_existing_evidence(storage: &Storage) -> AppResult<Value> {
+    let db = storage.connection()?;
+    let mut statement =
+        db.prepare("SELECT id FROM contributions WHERE status!='ARCHIVED' ORDER BY id")?;
+    let ids = statement
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    drop(statement);
+    drop(db);
+
+    let mut added = 0;
+    let mut skipped = 0;
+    let mut incomplete = 0;
+    for id in ids {
+        if id.len() != 32 || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
+            incomplete += 1;
+            continue;
+        }
+        let path = storage.paths().evidence.join("inbox").join(&id);
+        if std::fs::symlink_metadata(path)
+            .is_err_and(|error| error.kind() == std::io::ErrorKind::NotFound)
+        {
+            continue;
+        }
+        match refresh_evidence(storage, &id) {
+            Ok(result) => {
+                added += result["added"].as_u64().unwrap_or(0);
+                skipped += result["skipped"].as_u64().unwrap_or(0);
+                if result["limited"] == true {
+                    incomplete += 1;
+                }
+            }
+            Err(_) => incomplete += 1,
+        }
+    }
+    Ok(json!({"added":added,"skipped":skipped,"incomplete":incomplete}))
+}
+
 pub fn read_evidence(storage: &Storage, file_id: &str) -> AppResult<Vec<u8>> {
     let (relative, hash): (String, String) = storage
         .connection()?

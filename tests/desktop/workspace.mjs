@@ -108,6 +108,7 @@ if (rrServer) {
 const rrOrigin = rrServer ? 'http://127.0.0.1:' + rrServer.address().port : '';
 const finalFilename = withRr ? 'reactive-resume.pdf' : 'smoke-final.pdf';
 let identity;
+let restartInbox;
 for(let cycle=1;cycle<=2;cycle++){
  const child=spawn(exe,[],{cwd:root,windowsHide:true,env:{...process.env,CAREER_COPILOT_WORKSPACE:path.join(runRoot,'workspace'),WEBVIEW2_USER_DATA_FOLDER:path.join(runRoot,'webview'),WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:'--remote-debugging-address=127.0.0.1 --remote-debugging-port='+port},stdio:['ignore','pipe','pipe']});
  let output=''; child.stdout.on('data',s=>output+=s);child.stderr.on('data',s=>output+=s);
@@ -165,6 +166,7 @@ for(let cycle=1;cycle<=2;cycle++){
    await expect(page.getByRole('button',{name:'访谈原始记录.txt',exact:true})).toBeVisible();
    const assetId = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('workspace_snapshot')).assets[0].id);
    const dropFolder = path.join(storage.root,'evidence','inbox',assetId,'项目资料');
+   restartInbox = dropFolder;
    await mkdir(dropFolder,{recursive:true});
    await writeFile(path.join(dropFolder,'补充工作记录.txt'),'通过资源管理器导入的合成记录');
    await page.getByRole('button',{name:'刷新材料',exact:true}).click();
@@ -313,6 +315,7 @@ for(let cycle=1;cycle<=2;cycle++){
   }else{
    await nav('职业资产').click();
    await expect(page.getByRole('heading',{name:'用户调研项目',exact:true})).toBeVisible();
+   await expect(page.getByRole('button',{name:'关机期间新增.txt',exact:true})).toHaveCount(1);
    const evidenceDownload = page.waitForEvent('download');
    await page.getByRole('button',{name:'访谈原始记录.txt',exact:true}).click();
    const evidencePath = path.join(runRoot,'evidence-export.txt');
@@ -351,6 +354,7 @@ for(let cycle=1;cycle<=2;cycle++){
   }
   await sleep(300);
  }
+ if(cycle===1)await writeFile(path.join(restartInbox,'关机期间新增.txt'),'重启时自动导入的合成材料');
 }
 if(aiServer)await new Promise(resolve=>aiServer.close(resolve));
 if (rrServer) await new Promise(resolve => {

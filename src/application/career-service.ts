@@ -62,6 +62,10 @@ export function createCareerService(call: NativeInvoke = invoke, native = isTaur
    requireDesktop();
    return call('refresh_asset_evidence', { contributionId });
   },
+  async refreshExistingEvidence(): Promise<{ added: number; skipped: number; incomplete: number }> {
+   requireDesktop();
+   return call('refresh_existing_asset_evidence');
+  },
  };
 }
 export type CareerService = ReturnType<typeof createCareerService>;

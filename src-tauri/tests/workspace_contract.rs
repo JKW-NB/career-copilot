@@ -105,6 +105,41 @@ fn evidence_is_scoped_deduplicated_and_checked_before_download() {
 }
 
 #[test]
+fn startup_scan_only_imports_existing_active_asset_folders() {
+    let dir = Dir::new();
+    let storage = Storage::initialize(&dir.0).unwrap();
+    let active = asset(&storage);
+    let archived = asset(&storage);
+    let untouched = asset(&storage);
+    let active_inbox = workspace::evidence_inbox(&storage, &active).unwrap();
+    let archived_inbox = workspace::evidence_inbox(&storage, &archived).unwrap();
+    fs::write(active_inbox.join("new.txt"), b"new evidence").unwrap();
+    fs::write(archived_inbox.join("old.txt"), b"archived evidence").unwrap();
+    act(
+        &storage,
+        json!({"type":"archive_asset","contribution_id":archived}),
+    )
+    .unwrap();
+    assert_eq!(
+        workspace::refresh_existing_evidence(&storage).unwrap(),
+        json!({"added":1,"skipped":0,"incomplete":0})
+    );
+    assert_eq!(
+        workspace::refresh_existing_evidence(&storage).unwrap()["added"],
+        0
+    );
+    assert!(!storage
+        .paths()
+        .evidence
+        .join("inbox")
+        .join(untouched)
+        .exists());
+    let snapshot = workspace::snapshot(&storage).unwrap();
+    assert_eq!(snapshot["evidence"].as_array().unwrap().len(), 1);
+    assert_eq!(snapshot["evidence"][0]["contributionId"], active);
+}
+
+#[test]
 fn refresh_imports_nested_files_and_retains_previous_evidence() {
     let dir = Dir::new();
     let storage = Storage::initialize(&dir.0).unwrap();

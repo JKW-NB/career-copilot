@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Compass, Layers3, BriefcaseBusiness, FolderClosed, Settings2, Home, ArrowRight, ShieldCheck, Check, X, FileText, Plus, Sparkles } from 'lucide-react';
 import { createCareerService, emptyCareerState, errorMessage, resumeHtml, resumeMarkdown, download, type Action, type Fact, type Resume, type CareerService } from '../application/career-service';
 import { loadStorageInfo, type StorageInfo } from '../infrastructure/storage';
@@ -32,6 +32,7 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
  const [demo, setDemo] = useState(false);
  const [busy, setBusy] = useState(false);
  const [loaded, setLoaded] = useState(false);
+ const startup = useRef<Promise<{ state: Awaited<ReturnType<CareerService['load']>>; message?: string }> | null>(null);
  const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
  const [jobId, setJobId] = useState('');
  const [selected, setSelected] = useState<string[]>([]);
@@ -45,7 +46,24 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
  const load = async () => { const next = await service.load(); setState(next); setLoaded(true); };
  useEffect(() => {
   let alive = true;
-  if (service.native) service.load().then(next => { if (alive) { setState(next); setLoaded(true); } }).catch(error => { if (alive) setNotice({ text: errorMessage(error), error: true }); });
+  if (service.native) {
+   startup.current ??= (async () => {
+    let message: string | undefined;
+    try {
+     const scan = await service.refreshExistingEvidence();
+     if (scan.added || scan.skipped || scan.incomplete) {
+      message = `启动时新增 ${scan.added} 份材料，跳过 ${scan.skipped} 项。${scan.incomplete ? `有 ${scan.incomplete} 项职业资产未扫完，可在资产页手动刷新。` : ''}`;
+     }
+    } catch { message = '启动时未能刷新佐证材料，可在资产页手动刷新。'; }
+    return { state: await service.load(), message };
+   })();
+   void startup.current.then(next => {
+    if (!alive) return;
+    setState(next.state);
+    setLoaded(true);
+    if (next.message) setNotice({ text: next.message, error: false });
+   }).catch(error => { if (alive) setNotice({ text: errorMessage(error), error: true }); });
+  }
   else setLoaded(true);
   loadStorageInfo().then(info => { if (alive) setStorage(info); }).catch(() => {});
   return () => { alive = false; };

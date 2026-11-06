@@ -81,6 +81,16 @@ async fn refresh_asset_evidence(
 }
 
 #[tauri::command]
+async fn refresh_existing_asset_evidence(
+    storage: tauri::State<'_, Storage>,
+) -> workspace::AppResult<serde_json::Value> {
+    let storage = storage.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || workspace::refresh_existing_evidence(&storage))
+        .await
+        .map_err(|_| workspace::fail("SCAN_FAILED", "启动时无法刷新材料。"))?
+}
+
+#[tauri::command]
 fn read_final_pdf(
     storage: tauri::State<'_, Storage>,
     file_id: String,
@@ -158,6 +168,7 @@ pub fn run() {
             read_asset_evidence,
             open_asset_evidence_folder,
             refresh_asset_evidence,
+            refresh_existing_asset_evidence,
             read_final_pdf,
             ai_status,
             configure_ai,
