@@ -9,8 +9,9 @@ export interface ResumePlan { name: string; contact: string; education: string; 
 export interface Resume { id: string; jobId: string; portfolioId: string; version: number; status: 'DRAFT' | 'CONTENT_READY'; plan: ResumePlan; createdAt: string }
 export interface FinalFile { id: string; resumeId: string; name: string; hash: string; used: number; createdAt: string }
 export interface Application { id: string; jobId: string; fileId: string; channel: string; status: string; note: string; appliedAt: string }
-export interface CareerState { assets: Asset[]; facts: Fact[]; jobs: Job[]; analyses: Analysis[]; portfolios: Portfolio[]; resumes: Resume[]; files: FinalFile[]; applications: Application[] }
-export const emptyCareerState = (): CareerState => ({ assets: [], facts: [], jobs: [], analyses: [], portfolios: [], resumes: [], files: [], applications: [] });
+export interface AssetEvidence { id: string; contributionId: string; name: string; size: number }
+export interface CareerState { assets: Asset[]; evidence: AssetEvidence[]; facts: Fact[]; jobs: Job[]; analyses: Analysis[]; portfolios: Portfolio[]; resumes: Resume[]; files: FinalFile[]; applications: Application[] }
+export const emptyCareerState = (): CareerState => ({ assets: [], evidence: [], facts: [], jobs: [], analyses: [], portfolios: [], resumes: [], files: [], applications: [] });
 export type Action =
  | { type: 'add_asset'; organization: string; role: string; title: string; summary: string }
  | { type: 'add_fact'; contribution_id: string; content: string; ownership: string }
@@ -43,6 +44,24 @@ export function createCareerService(call: NativeInvoke = invoke, native = isTaur
    return call('attach_final_pdf', { resumeId, name: file.name, bytes: Array.from(bytes) });
   },
   async readFile(fileId: string): Promise<Uint8Array> { requireDesktop(); return new Uint8Array(await call<number[]>('read_final_pdf', { fileId })); },
+  async attachEvidence(contributionId: string, file: File): Promise<{ id: string }> {
+   requireDesktop();
+   if (file.size < 1 || file.size > 15 * 1024 * 1024) throw new Error('请选择非空且不超过 15 MB 的佐证材料。');
+   const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
+   return call('attach_asset_evidence', { contributionId, name: file.name, bytes });
+  },
+  async readEvidence(fileId: string): Promise<Uint8Array> {
+   requireDesktop();
+   return new Uint8Array(await call<number[]>('read_asset_evidence', { fileId }));
+  },
+  async openEvidenceFolder(contributionId: string): Promise<void> {
+   requireDesktop();
+   return call('open_asset_evidence_folder', { contributionId });
+  },
+  async refreshEvidence(contributionId: string): Promise<{ added: number; existing: number; skipped: number; limited: boolean }> {
+   requireDesktop();
+   return call('refresh_asset_evidence', { contributionId });
+  },
  };
 }
 export type CareerService = ReturnType<typeof createCareerService>;

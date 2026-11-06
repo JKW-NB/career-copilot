@@ -37,6 +37,50 @@ fn attach_final_pdf(
 }
 
 #[tauri::command]
+fn attach_asset_evidence(
+    storage: tauri::State<'_, Storage>,
+    contribution_id: String,
+    name: String,
+    bytes: Vec<u8>,
+) -> workspace::AppResult<serde_json::Value> {
+    workspace::attach_evidence(&storage, &contribution_id, &name, &bytes)
+}
+
+#[tauri::command]
+fn read_asset_evidence(
+    storage: tauri::State<'_, Storage>,
+    file_id: String,
+) -> workspace::AppResult<Vec<u8>> {
+    workspace::read_evidence(&storage, &file_id)
+}
+
+#[tauri::command]
+fn open_asset_evidence_folder(
+    storage: tauri::State<'_, Storage>,
+    contribution_id: String,
+) -> workspace::AppResult<()> {
+    let path = workspace::evidence_inbox(&storage, &contribution_id)?;
+    std::process::Command::new("explorer.exe")
+        .arg(path)
+        .spawn()
+        .map_err(|_| workspace::fail("OPEN_FAILED", "无法打开材料目录。"))?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn refresh_asset_evidence(
+    storage: tauri::State<'_, Storage>,
+    contribution_id: String,
+) -> workspace::AppResult<serde_json::Value> {
+    let storage = storage.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        workspace::refresh_evidence(&storage, &contribution_id)
+    })
+    .await
+    .map_err(|_| workspace::fail("SCAN_FAILED", "刷新材料时发生错误。"))?
+}
+
+#[tauri::command]
 fn read_final_pdf(
     storage: tauri::State<'_, Storage>,
     file_id: String,
@@ -110,6 +154,10 @@ pub fn run() {
             workspace_snapshot,
             workspace_action,
             attach_final_pdf,
+            attach_asset_evidence,
+            read_asset_evidence,
+            open_asset_evidence_folder,
+            refresh_asset_evidence,
             read_final_pdf,
             ai_status,
             configure_ai,

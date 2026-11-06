@@ -573,6 +573,7 @@ pub fn snapshot(storage: &Storage) -> AppResult<Value> {
     let value = json!({
     "assets":rows(&tx,"SELECT json_object('id',c.id,'title',c.title,'summary',c.summary,'organization',e.organization,'role',e.role) FROM contributions c JOIN projects p ON p.id=c.project_id JOIN experiences e ON e.id=p.experience_id WHERE c.status!='ARCHIVED' ORDER BY e.created_at DESC,c.id")?,
     "facts":rows(&tx,"SELECT json_object('id',f.id,'contributionId',f.contribution_id,'state',f.state,'revisionId',r.id,'content',r.content,'verification',r.verification_status,'risk',r.risk_level,'ownership',r.ownership_scope,'revision',r.revision_no) FROM facts f JOIN fact_revisions r ON r.id=f.current_revision_id ORDER BY r.created_at,f.id")?,
+    "evidence":rows(&tx,"SELECT json_object('id',id,'contributionId',contribution_id,'name',display_name,'size',size_bytes) FROM asset_evidence ORDER BY created_at,id")?,
     "jobs":rows(&tx,"SELECT json_object('id',id,'company',company,'roleTitle',role_title,'jd',jd_current_text) FROM jobs ORDER BY created_at DESC,id")?,
     "analyses":rows(&tx,"SELECT json_object('id',id,'jobId',job_id,'version',version_no,'requirements',json(proof_json)) FROM job_analysis_versions ORDER BY created_at,id")?,
     "portfolios":rows(&tx,"SELECT json_object('id',id,'jobId',job_id,'analysisId',job_analysis_version_id,'version',version_no,'revisionIds',json_extract(snapshot_context_json,'$.revisionIds')) FROM contribution_portfolios ORDER BY created_at,id")?,
@@ -583,6 +584,235 @@ pub fn snapshot(storage: &Storage) -> AppResult<Value> {
     tx.commit()?;
     Ok(value)
 }
+pub fn attach_evidence(
+    storage: &Storage,
+    contribution_id: &str,
+    name: &str,
+    bytes: &[u8],
+) -> AppResult<Value> {
+    let invalid = || {
+        fail(
+            "INVALID_FILE",
+            "请选择不超过 15 MB 的 PDF、Office 文档、图片、文本或 ZIP、7Z、RAR 压缩包。",
+        )
+    };
+    text(name, 200)?;
+    if bytes.is_empty()
+        || bytes.len() > 15 * 1024 * 1024
+        || name.contains(['/', '\\', ':'])
+        || name.chars().any(char::is_control)
+    {
+        return Err(invalid());
+    }
+    let extension = name
+        .rsplit_once('.')
+        .map(|(_, ext)| ext.to_ascii_lowercase())
+        .ok_or_else(invalid)?;
+    let valid = match extension.as_str() {
+        "pdf" => bytes.starts_with(b"%PDF-") && bytes.windows(5).any(|w| w == b"%%EOF"),
+        "docx" | "pptx" | "xlsx" => bytes.starts_with(b"PK\x03\x04"),
+        "zip" => bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06"),
+        "7z" => bytes.starts_with(b"7z\xbc\xaf\x27\x1c"),
+        "rar" => {
+            bytes.starts_with(b"Rar!\x1a\x07\x00") || bytes.starts_with(b"Rar!\x1a\x07\x01\x00")
+        }
+        "png" => bytes.starts_with(b"\x89PNG\r\n\x1a\n"),
+        "jpg" | "jpeg" => bytes.starts_with(b"\xff\xd8\xff"),
+        "txt" | "md" => std::str::from_utf8(bytes).is_ok() && !bytes.contains(&0),
+        _ => false,
+    };
+    if !valid {
+        return Err(invalid());
+    }
+    let mut db = storage.connection()?;
+    let tx = db.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    exists(
+        &tx,
+        "SELECT EXISTS(SELECT 1 FROM contributions WHERE id=?1 AND status!='ARCHIVED')",
+        contribution_id,
+    )?;
+    let hash = format!("{:x}", Sha256::digest(bytes));
+    let existing: Option<String> = tx
+        .query_row(
+            "SELECT id FROM asset_evidence WHERE contribution_id=?1 AND sha256=?2",
+            params![contribution_id, hash],
+            |row| row.get(0),
+        )
+        .optional()?;
+    if let Some(existing) = existing {
+        return Ok(json!({"id":existing,"added":false}));
+    }
+    let file = id(&tx)?;
+    let relative = format!("{file}.{extension}");
+    tx.execute(
+        "INSERT INTO asset_evidence VALUES (?1,?2,?3,?4,?5,?6,?7)",
+        params![
+            file,
+            contribution_id,
+            name,
+            relative,
+            hash,
+            bytes.len() as i64,
+            now(&tx)?
+        ],
+    )?;
+    let path = storage.write_managed_file(ManagedFileArea::Evidence, &file, &extension, bytes)?;
+    if let Err(error) = tx.commit() {
+        let _ = std::fs::remove_file(path);
+        return Err(error.into());
+    }
+    Ok(json!({"id":file,"added":true}))
+}
+
+fn ordinary_directory(path: &std::path::Path) -> AppResult<()> {
+    let info =
+        std::fs::symlink_metadata(path).map_err(|_| fail("EVIDENCE_DIR", "无法读取材料目录。"))?;
+    #[cfg(windows)]
+    let linked = {
+        use std::os::windows::fs::MetadataExt;
+        info.file_attributes() & 0x400 != 0
+    };
+    #[cfg(not(windows))]
+    let linked = info.file_type().is_symlink();
+    if linked || !info.is_dir() {
+        return Err(fail("EVIDENCE_DIR", "材料目录不能是链接。"));
+    }
+    Ok(())
+}
+
+pub fn evidence_inbox(storage: &Storage, contribution_id: &str) -> AppResult<std::path::PathBuf> {
+    if contribution_id.len() != 32 || !contribution_id.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err(fail("INVALID_INPUT", "职业资产标识无效。"));
+    }
+    let db = storage.connection()?;
+    exists(
+        &db,
+        "SELECT EXISTS(SELECT 1 FROM contributions WHERE id=?1 AND status!='ARCHIVED')",
+        contribution_id,
+    )?;
+    ordinary_directory(&storage.paths().evidence)?;
+    let inbox = storage.paths().evidence.join("inbox");
+    let asset = inbox.join(contribution_id);
+    for path in [&inbox, &asset] {
+        match std::fs::create_dir(path) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(_) => return Err(fail("EVIDENCE_DIR", "无法创建材料目录。")),
+        }
+        ordinary_directory(path)?;
+    }
+    Ok(asset)
+}
+
+pub fn refresh_evidence(storage: &Storage, contribution_id: &str) -> AppResult<Value> {
+    use std::io::Read;
+    let inbox = evidence_inbox(storage, contribution_id)?;
+    let mut folders = vec![(inbox, 0)];
+    let mut added = 0;
+    let mut existing = 0;
+    let mut skipped = 0;
+    let mut scanned = 0;
+    let mut limited = false;
+    'scan: while let Some((dir, depth)) = folders.pop() {
+        if ordinary_directory(&dir).is_err() {
+            skipped += 1;
+            continue;
+        }
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            skipped += 1;
+            continue;
+        };
+        for entry in entries {
+            if scanned >= 500 {
+                limited = true;
+                break 'scan;
+            }
+            scanned += 1;
+            let Ok(entry) = entry else {
+                skipped += 1;
+                continue;
+            };
+            let path = entry.path();
+            let Ok(info) = std::fs::symlink_metadata(&path) else {
+                skipped += 1;
+                continue;
+            };
+            #[cfg(windows)]
+            {
+                use std::os::windows::fs::MetadataExt;
+                if info.file_attributes() & 0x400 != 0 {
+                    skipped += 1;
+                    continue;
+                }
+            }
+            if info.is_dir() && depth < 16 {
+                folders.push((path, depth + 1));
+                continue;
+            }
+            if !info.is_file() || info.len() > 15 * 1024 * 1024 {
+                skipped += 1;
+                continue;
+            }
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else {
+                skipped += 1;
+                continue;
+            };
+            let Ok(file) = std::fs::File::open(&path) else {
+                skipped += 1;
+                continue;
+            };
+            let mut bytes = Vec::new();
+            if file
+                .take(15 * 1024 * 1024 + 1)
+                .read_to_end(&mut bytes)
+                .is_err()
+            {
+                skipped += 1;
+                continue;
+            }
+            match attach_evidence(storage, contribution_id, name, &bytes) {
+                Ok(result) if result["added"] == true => added += 1,
+                Ok(_) => existing += 1,
+                Err(error) if matches!(error.code.as_str(), "INVALID_FILE" | "INVALID_INPUT") => {
+                    skipped += 1
+                }
+                Err(error) => return Err(error),
+            }
+        }
+    }
+    Ok(json!({"added":added,"existing":existing,"skipped":skipped,"limited":limited}))
+}
+
+pub fn read_evidence(storage: &Storage, file_id: &str) -> AppResult<Vec<u8>> {
+    let (relative, hash): (String, String) = storage
+        .connection()?
+        .query_row(
+            "SELECT stored_path,sha256 FROM asset_evidence WHERE id=?1",
+            [file_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .optional()?
+        .ok_or_else(|| fail("NOT_FOUND", "佐证材料不存在。"))?;
+    if relative.contains(['/', '\\', ':']) {
+        return Err(fail("INVALID_FILE", "佐证材料路径无效。"));
+    }
+    let path = storage.paths().evidence.join(relative);
+    let info =
+        std::fs::symlink_metadata(&path).map_err(|_| fail("INVALID_FILE", "无法读取佐证材料。"))?;
+    if !info.is_file() || info.len() > 15 * 1024 * 1024 {
+        return Err(fail("INVALID_FILE", "佐证材料文件无效。"));
+    }
+    let bytes = std::fs::read(path).map_err(|_| fail("INVALID_FILE", "无法读取佐证材料。"))?;
+    if format!("{:x}", Sha256::digest(&bytes)) != hash {
+        return Err(fail(
+            "FILE_CHANGED",
+            "佐证材料内容已变化，无法通过完整性检查。",
+        ));
+    }
+    Ok(bytes)
+}
+
 pub fn attach_pdf(
     storage: &Storage,
     resume_id: &str,

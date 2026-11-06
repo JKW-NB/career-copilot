@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { once } from 'node:events';
-import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { createServer as createHttpServer } from 'node:http';
 import os from 'node:os';
@@ -109,7 +109,7 @@ const rrOrigin = rrServer ? 'http://127.0.0.1:' + rrServer.address().port : '';
 const finalFilename = withRr ? 'reactive-resume.pdf' : 'smoke-final.pdf';
 let identity;
 for(let cycle=1;cycle<=2;cycle++){
- const child=spawn(exe,[],{cwd:root,windowsHide:true,env:{...process.env,CAREER_COPILOT_WORKSPACE:path.join(runRoot,'workspace'),WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:'--remote-debugging-address=127.0.0.1 --remote-debugging-port='+port},stdio:['ignore','pipe','pipe']});
+ const child=spawn(exe,[],{cwd:root,windowsHide:true,env:{...process.env,CAREER_COPILOT_WORKSPACE:path.join(runRoot,'workspace'),WEBVIEW2_USER_DATA_FOLDER:path.join(runRoot,'webview'),WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:'--remote-debugging-address=127.0.0.1 --remote-debugging-port='+port},stdio:['ignore','pipe','pipe']});
  let output=''; child.stdout.on('data',s=>output+=s);child.stderr.on('data',s=>output+=s);
  let browser;
  try {
@@ -161,6 +161,14 @@ for(let cycle=1;cycle<=2;cycle++){
    await dialog.getByLabel('经历描述').fill('整理真实访谈材料，形成研究问题。');
    await dialog.getByRole('button',{name:'保存职业资产'}).click();
    await expect(dialog).not.toBeVisible();
+   await page.getByLabel('上传佐证材料').setInputFiles({name:'访谈原始记录.txt',mimeType:'text/plain',buffer:Buffer.from('合成访谈记录，用于验证文件归档。')});
+   await expect(page.getByRole('button',{name:'访谈原始记录.txt',exact:true})).toBeVisible();
+   const assetId = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('workspace_snapshot')).assets[0].id);
+   const dropFolder = path.join(storage.root,'evidence','inbox',assetId,'项目资料');
+   await mkdir(dropFolder,{recursive:true});
+   await writeFile(path.join(dropFolder,'补充工作记录.txt'),'通过资源管理器导入的合成记录');
+   await page.getByRole('button',{name:'刷新材料',exact:true}).click();
+   await expect(page.getByRole('button',{name:'补充工作记录.txt',exact:true})).toBeVisible();
    await page.getByLabel('新增一条可核实的事实').fill('整理 12 份访谈记录，形成问题清单');
    await page.getByRole('button',{name:'保存待审查事实'}).click();
    await page.getByRole('button',{name:'审查事实',exact:true}).click();
@@ -305,6 +313,11 @@ for(let cycle=1;cycle<=2;cycle++){
   }else{
    await nav('职业资产').click();
    await expect(page.getByRole('heading',{name:'用户调研项目',exact:true})).toBeVisible();
+   const evidenceDownload = page.waitForEvent('download');
+   await page.getByRole('button',{name:'访谈原始记录.txt',exact:true}).click();
+   const evidencePath = path.join(runRoot,'evidence-export.txt');
+   await (await evidenceDownload).saveAs(evidencePath);
+   assert.equal(await readFile(evidencePath,'utf8'),'合成访谈记录，用于验证文件归档。');
    await expect(page.locator('#real-main').getByText(withAi?'待审查':'用户已确认',{exact:true})).toBeVisible();
    await nav('版本资料库').click();
    await expect(page.getByRole('heading',{name:'投递记录'})).toBeVisible();

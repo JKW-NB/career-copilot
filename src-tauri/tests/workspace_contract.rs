@@ -28,7 +28,7 @@ fn upgrades_v1_workspace_with_identity_and_backup_intact() {
     drop(db);
     let storage = Storage::initialize(&dir.0).unwrap();
     assert_eq!(storage.info().workspace_id, identity);
-    assert_eq!(storage.info().schema_version, 3);
+    assert_eq!(storage.info().schema_version, 4);
     assert!(workspace::snapshot(&storage).unwrap()["assets"]
         .as_array()
         .unwrap()
@@ -64,6 +64,75 @@ fn act(s: &Storage, value: Value) -> workspace::AppResult<Value> {
 }
 fn asset(s: &Storage) -> String {
     act(s,json!({"type":"add_asset","organization":"测试机构","role":"参与者","title":"调研项目","summary":"整理访谈材料"})).unwrap()["id"].as_str().unwrap().into()
+}
+#[test]
+fn evidence_is_scoped_deduplicated_and_checked_before_download() {
+    let dir = Dir::new();
+    let storage = Storage::initialize(&dir.0).unwrap();
+    let owner = asset(&storage);
+    let other = asset(&storage);
+    let bytes = "访谈原始记录".as_bytes();
+    assert!(workspace::attach_evidence(&storage, "missing", "notes.txt", bytes).is_err());
+    assert!(workspace::attach_evidence(&storage, &owner, "../notes.txt", bytes).is_err());
+    assert!(workspace::attach_evidence(&storage, &owner, "notes.pdf", bytes).is_err());
+    let first = workspace::attach_evidence(&storage, &owner, "notes.txt", bytes).unwrap();
+    assert_eq!(
+        first["id"],
+        workspace::attach_evidence(&storage, &owner, "copy.txt", bytes).unwrap()["id"]
+    );
+    assert_ne!(
+        first,
+        workspace::attach_evidence(&storage, &other, "notes.txt", bytes).unwrap()
+    );
+    let file_id = first["id"].as_str().unwrap();
+    drop(storage);
+    let reopened = Storage::initialize(&dir.0).unwrap();
+    let snapshot = workspace::snapshot(&reopened).unwrap();
+    assert_eq!(snapshot["evidence"].as_array().unwrap().len(), 2);
+    assert!(snapshot["facts"].as_array().unwrap().is_empty());
+    assert_eq!(workspace::read_evidence(&reopened, file_id).unwrap(), bytes);
+    fs::write(
+        reopened.paths().evidence.join(format!("{file_id}.txt")),
+        b"changed",
+    )
+    .unwrap();
+    assert_eq!(
+        workspace::read_evidence(&reopened, file_id)
+            .unwrap_err()
+            .code,
+        "FILE_CHANGED"
+    );
+}
+
+#[test]
+fn refresh_imports_nested_files_and_retains_previous_evidence() {
+    let dir = Dir::new();
+    let storage = Storage::initialize(&dir.0).unwrap();
+    let owner = asset(&storage);
+    let inbox = workspace::evidence_inbox(&storage, &owner).unwrap();
+    let nested = inbox.join("project-notes");
+    fs::create_dir(&nested).unwrap();
+    let text = nested.join("notes.txt");
+    fs::write(&text, b"first").unwrap();
+    fs::write(inbox.join("empty.zip"), b"PK\x05\x06").unwrap();
+    fs::write(inbox.join("skip.exe"), b"ignored").unwrap();
+    assert_eq!(
+        workspace::refresh_evidence(&storage, &owner).unwrap(),
+        json!({"added":2,"existing":0,"skipped":1,"limited":false})
+    );
+    assert_eq!(
+        workspace::refresh_evidence(&storage, &owner).unwrap()["existing"],
+        2
+    );
+    fs::write(&text, b"second").unwrap();
+    assert_eq!(
+        workspace::refresh_evidence(&storage, &owner).unwrap()["added"],
+        1
+    );
+    fs::remove_file(text).unwrap();
+    let snapshot = workspace::snapshot(&storage).unwrap();
+    assert_eq!(snapshot["evidence"].as_array().unwrap().len(), 3);
+    assert!(snapshot["facts"].as_array().unwrap().is_empty());
 }
 fn fact(s: &Storage, a: &str, content: &str) -> (String, String) {
     let value = act(

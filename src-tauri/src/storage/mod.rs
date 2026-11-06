@@ -10,7 +10,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-const LATEST_SCHEMA_VERSION: u32 = 3;
+const LATEST_SCHEMA_VERSION: u32 = 4;
 const DEFAULT_MIGRATIONS: &[Migration] = &[
     Migration::new(
         1,
@@ -26,6 +26,11 @@ const DEFAULT_MIGRATIONS: &[Migration] = &[
         3,
         "AI proposals",
         include_str!("../../migrations/0003_ai_proposals.sql"),
+    ),
+    Migration::new(
+        4,
+        "asset evidence",
+        include_str!("../../migrations/0004_asset_evidence.sql"),
     ),
 ];
 static NEXT_PENDING_FILE: AtomicU64 = AtomicU64::new(1);
@@ -135,6 +140,7 @@ impl From<rusqlite::Error> for StorageError {
     }
 }
 
+#[derive(Clone)]
 pub struct Storage {
     paths: StoragePaths,
     workspace_id: String,

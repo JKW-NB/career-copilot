@@ -50,14 +50,14 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
   loadStorageInfo().then(info => { if (alive) setStorage(info); }).catch(() => {});
   return () => { alive = false; };
  }, [service]);
- const perform = async (work: () => Promise<unknown>, success: string) => {
+ const perform = async (work: () => Promise<unknown>, success: string | (() => string)) => {
   if (busy) return false;
   setBusy(true); setNotice(null);
   try {
    await work();
    try { await load(); }
    catch { setNotice({ text: '操作已完成，但读取最新状态失败。请重新启动后查看，勿重复提交。', error: true }); return true; }
-   setNotice({ text: success, error: false }); return true;
+   setNotice({ text: typeof success === 'function' ? success() : success, error: false }); return true;
   }
   catch (error) { setNotice({ text: errorMessage(error), error: true }); return false; }
   finally { setBusy(false); }
@@ -110,6 +110,31 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
     {state.assets.filter(a => (a.title + a.organization + a.summary).includes(query)).map(asset => <article className="real-card" key={asset.id}>
      <div className="section-heading"><div><span className="eyebrow">{asset.organization} · {asset.role}</span><h2>{asset.title}</h2></div><button className="text-button" onClick={() => { if (window.confirm('归档这项资产？历史简历保留，新组合将不能再选用其中事实。')) void act({ type: 'archive_asset', contribution_id: asset.id }, '资产已归档，历史内容保留。'); }}>归档</button></div>
      <p className="preserve-lines">{asset.summary}</p>
+     <h3>佐证材料</h3>
+     <p className="muted">上传材料，或把文件和文件夹复制到材料目录后刷新。压缩包按原件保存，事实仍需逐条审查。</p>
+     <div className="real-actions">
+      <button className="button button-secondary" type="button" onClick={() => void perform(() => service.openEvidenceFolder(asset.id), '请复制材料到目录，再回到这里刷新。')}>打开材料目录</button>
+      <button className="button button-secondary" type="button" onClick={() => void (async () => {
+       let report = '';
+       await perform(async () => {
+        const result = await service.refreshEvidence(asset.id);
+        report = `新增 ${result.added} 份，已有 ${result.existing} 份，跳过 ${result.skipped} 份（格式、大小或读取受限）。${result.limited ? ' 扫描达到上限，请分批放入材料。' : ''}`;
+       }, () => report);
+      })()}>刷新材料</button>
+     </div>
+     <label>上传佐证材料<input type="file" accept=".pdf,.docx,.pptx,.xlsx,.png,.jpg,.jpeg,.txt,.md,.zip,.7z,.rar" onChange={event => {
+      const file = event.target.files?.[0];
+      if (file) void perform(() => service.attachEvidence(asset.id, file), '佐证材料已保存在工作区。');
+      event.target.value = '';
+     }} /></label>
+     <ul>
+      {state.evidence.filter(item => item.contributionId === asset.id).map(item => <li key={item.id}>
+       <button className="text-button" type="button" onClick={() => void perform(async () => {
+        const bytes = await service.readEvidence(item.id);
+        download(bytes as BlobPart, 'application/octet-stream', item.name);
+       }, '佐证材料完整性检查通过，已下载。')}>{item.name}</button>
+      </li>)}
+     </ul>
      <h3>事实清单</h3>
      {state.facts.filter(f => f.contributionId === asset.id).map(fact => <div className={'real-fact ' + (fact.state === 'RETRACTED' ? 'retracted' : '')} key={fact.id}>
       <div><p>{fact.content}</p><span className={'badge ' + (fact.verification === 'USER_CONFIRMED' ? 'badge-green' : 'badge-orange')}>{fact.state === 'RETRACTED' ? '已撤回' : fact.verification === 'USER_CONFIRMED' ? '用户已确认' : '待审查'}</span> <small>版本 {fact.revision} · {owners.find(o => o[0] === fact.ownership)?.[1]}{fact.risk === 'HIGH' ? ' · 需核实数字或职责' : ''}</small></div>
