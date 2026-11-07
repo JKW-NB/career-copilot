@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="428" viewBox="0 0 760 428" role="img" aria-labelledby="title desc">
+  <title id="title">Career Copilot 求职流程</title>
+  <desc id="desc">先在 Career Copilot 整理经历、录入 JD、选材并确认表述，再到 Reactive Resume 排版并导出 PDF，最后回 Career Copilot 归档版本并登记投递。</desc>
+  <rect width="760" height="428" rx="22" fill="#f4f6f0"/>
+  <g font-family="system-ui, 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', sans-serif">
+    <rect x="28" y="24" width="704" height="108" rx="14" fill="#fffefb" stroke="#d7dfd4"/>
+    <rect x="49" y="46" width="40" height="40" rx="10" fill="#e6efe7"/>
+    <text x="69" y="72" text-anchor="middle" font-size="17" font-weight="700" fill="#285142">01</text>
+    <text x="108" y="57" font-size="15" font-weight="700" fill="#386351">CAREER COPILOT</text>
+    <text x="108" y="87" font-size="26" font-weight="700" fill="#163a2e">针对岗位准备简历</text>
+    <text x="108" y="112" font-size="18" fill="#40564d">录入经历与佐证 · 粘贴 JD · 选材、优化并确认</text>
+
+    <path d="M69 139v18m-5-5 5 5 5-5" fill="none" stroke="#527666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="108" y="153" font-size="15" fill="#40564d">交接已确认的简历内容</text>
+
+    <rect x="28" y="164" width="704" height="100" rx="14" fill="#e7eee4" stroke="#d1decf"/>
+    <rect x="49" y="184" width="40" height="40" rx="10" fill="#d1e1d4"/>
+    <text x="69" y="210" text-anchor="middle" font-size="17" font-weight="700" fill="#285142">02</text>
+    <text x="108" y="194" font-size="15" font-weight="700" fill="#386351">REACTIVE RESUME</text>
+    <text x="108" y="223" font-size="26" font-weight="700" fill="#163a2e">排版并输出 PDF</text>
+    <text x="108" y="248" font-size="18" fill="#40564d">选择模板 · 调整排版 · 预览并导出</text>
+
+    <path d="M69 271v18m-5-5 5 5 5-5" fill="none" stroke="#527666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="108" y="285" font-size="15" fill="#40564d">取回最终 PDF</text>
+
+    <rect x="28" y="296" width="704" height="108" rx="14" fill="#fffefb" stroke="#d7dfd4"/>
+    <rect x="49" y="318" width="40" height="40" rx="10" fill="#e6efe7"/>
+    <text x="69" y="344" text-anchor="middle" font-size="17" font-weight="700" fill="#285142">03</text>
+    <text x="108" y="329" font-size="15" font-weight="700" fill="#386351">CAREER COPILOT</text>
+    <text x="108" y="359" font-size="26" font-weight="700" fill="#163a2e">归档版本并登记投递</text>
+    <text x="108" y="384" font-size="18" fill="#40564d">绑定 PDF 和内容版本 · 记录投递渠道与状态</text>
+  </g>
+</svg>
