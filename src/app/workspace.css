@@ -5,10 +5,11 @@
   border: 1px solid #d6e1d9;
   border-radius: 0.75rem;
 }
+.real-evidence-map { container-type: inline-size; }
 .real-evidence-map summary { cursor: pointer; font-weight: 650; }
 .real-evidence-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 0.75rem;
   margin-block: 0.75rem;
 }
@@ -19,3 +20,14 @@
   overflow-wrap: anywhere;
 }
 .real-evidence-columns h4 { margin: 0 0 0.4rem; }
+
+.real-evidence-arrow {
+  place-self: center;
+  color: #44654d;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+@container (width < 42rem) {
+  .real-evidence-columns { grid-template-columns: minmax(0, 1fr); }
+  .real-evidence-arrow { transform: rotate(90deg); }
+}

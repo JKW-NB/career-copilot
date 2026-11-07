@@ -22,7 +22,7 @@ export function FactEvidence({ fact, state, save, open }: { fact: Fact; state: C
  return <details className="real-evidence-map">
   <summary>事实与证据 · {links.length} 份关联</summary>
   <div className="real-evidence-columns">
-   <section><h4>佐证原件 →</h4>
+   <section><h4>佐证原件</h4>
     {links.length ? <ul>{links.map(link => {
      const file = files.find(item => item.id === link.evidenceId);
      if (!file) return null;
@@ -37,10 +37,12 @@ export function FactEvidence({ fact, state, save, open }: { fact: Fact; state: C
      </li>;
     })}</ul> : <p>尚未关联佐证。</p>}
    </section>
-   <section><h4>事实 V{fact.revision} →</h4><p>{alias || fact.content}</p>
+   <span className="real-evidence-arrow" aria-hidden="true">→</span>
+   <section><h4>事实 V{fact.revision}</h4><p>{alias || fact.content}</p>
     {alias && <small>原文：{fact.content}</small>}
     <NodeAlias label="事实别名" alias={alias} onSave={value => void save({type:'rename_fact_node',fact_id:fact.id,alias:value},'事实别名已保存。')} />
    </section>
+   <span className="real-evidence-arrow" aria-hidden="true">→</span>
    <section><h4>简历引用</h4>
     {resumes.length ? <ul>{resumes.map(resume => <li key={resume.id}>{state.jobs.find(job => job.id === resume.jobId)?.roleTitle ?? '岗位简历'} · 内容 V{resume.version}</li>)}</ul> : <p>此事实版本尚未被简历引用。</p>}
    </section>

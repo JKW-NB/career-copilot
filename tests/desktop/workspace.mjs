@@ -174,6 +174,7 @@ for(let cycle=1;cycle<=2;cycle++){
    await page.getByLabel('新增一条可核实的事实').fill('整理 12 份访谈记录，形成问题清单');
    await page.getByRole('button',{name:'保存待审查事实'}).click();
    await page.getByText('事实与证据 · 0 份关联',{exact:true}).click();
+   await expect(page.locator('.real-evidence-columns > section + .real-evidence-arrow + section')).toHaveCount(2);
    await page.getByLabel('事实别名',{exact:true}).fill('访谈整理');
    await page.locator('.real-evidence-map').getByRole('button',{name:'保存别名',exact:true}).click();
    await expect(page.getByText('访谈整理',{exact:true})).toBeVisible();
