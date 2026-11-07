@@ -16,6 +16,12 @@ export function NodeAlias({ label, alias, onSave }: { label: string; alias: stri
 
 export function EvidenceCanvas({ assetId, state, open }: { assetId: string; state: CareerState; open: OpenEvidence }) {
  const arrowId = useId();
+ const reviewEvidence = (fact: Fact) => {
+  const editor = document.getElementById('fact-evidence-' + fact.id);
+  if (!(editor instanceof HTMLDetailsElement)) return;
+  editor.open = true;
+  editor.querySelector('summary')?.focus();
+ };
  const files = state.evidence.filter(file => file.contributionId === assetId);
  const facts = state.facts.filter(fact => fact.contributionId === assetId);
  const factRows = new Map(facts.map((fact, index) => [fact.revisionId, index]));
@@ -41,7 +47,8 @@ export function EvidenceCanvas({ assetId, state, open }: { assetId: string; stat
      </section>
      <section aria-label="事实版本"><h4>事实版本</h4>
       {facts.map(fact => <div className="evidence-node" key={fact.revisionId} title={fact.content}>
-       <strong>{state.factAliases.find(alias => alias.factId === fact.id)?.alias || fact.content}</strong><small>V{fact.revision}</small>
+       <strong>{state.factAliases.find(alias => alias.factId === fact.id)?.alias || fact.content}</strong><small>V{fact.revision} · <button type="button" className="text-button" aria-label={'核对与修正：' + fact.content}
+        onClick={() => reviewEvidence(fact)}>核对与修正</button></small>
       </div>)}
      </section>
      <section aria-label="简历引用"><h4>简历引用</h4>
@@ -74,7 +81,7 @@ export function FactEvidence({ fact, state, save, open }: { fact: Fact; state: C
  const alias = state.factAliases.find(item => item.factId === fact.id)?.alias ?? '';
  const resumes = state.resumes.filter(resume => resume.plan.items.some(item => item.revisionId === fact.revisionId));
  const target = { fact_id: fact.id, expected_revision_id: fact.revisionId };
- return <details className="real-evidence-map">
+ return <details className="real-evidence-map" id={'fact-evidence-' + fact.id}>
   <summary>事实与证据 · {links.length} 份关联</summary>
   <div>
    <section>
@@ -89,6 +96,23 @@ export function FactEvidence({ fact, state, save, open }: { fact: Fact; state: C
        <button type="button" className="text-button" onClick={() => void save({ type:'set_fact_evidence', ...target, evidence_id:file.id, locator:link.locator, checked:!link.checked }, '关联核对状态已更新。')}>{link.checked ? '改为待核对' : '标记已核对'}</button>
        <button type="button" className="text-button" onClick={() => void save({ type:'remove_fact_evidence', ...target, evidence_id:file.id }, '当前关联已移除。')}>移除关联</button>
       </div>}
+      {fact.state === 'ACTIVE' && <details key={link.locator}>
+       <summary>修正证据位置</summary>
+       <form className="real-actions" onSubmit={async event => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const locator = String(new FormData(form).get('locator') ?? '').trim();
+        if (locator === link.locator) {
+         form.closest('details')?.removeAttribute('open');
+         return;
+        }
+        if (await save({type:'set_fact_evidence',...target,evidence_id:file.id,locator,checked:false},
+         '证据位置已修正，请重新核对。')) form.closest('details')?.removeAttribute('open');
+       }}>
+        <label>修正位置<input name="locator" defaultValue={link.locator} maxLength={500} /></label>
+        <button className="button button-secondary">保存修正</button>
+       </form>
+      </details>}
      </li>;
     })}</ul> : <p>尚未关联佐证。</p>}
    </section>

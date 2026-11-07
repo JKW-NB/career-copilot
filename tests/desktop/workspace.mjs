@@ -185,6 +185,17 @@ for(let cycle=1;cycle<=2;cycle++){
    await page.getByRole('button',{name:'保存证据关联'}).click();
    await page.getByRole('button',{name:'标记已核对'}).click();
    await expect(page.getByText('第 2 段 · 已核对',{exact:true})).toBeVisible();
+   await page.getByRole('button',{name:/^核对与修正/}).click();
+   await expect(page.getByText('事实与证据 · 1 份关联',{exact:true})).toBeFocused();
+   await page.getByText('修正证据位置',{exact:true}).click();
+   await page.getByLabel('修正位置',{exact:true}).fill('第 3 段');
+   await page.getByRole('button',{name:'保存修正',exact:true}).click();
+   await expect(page.getByText('第 3 段 · 待核对',{exact:true})).toBeVisible();
+   await page.getByText('修正证据位置',{exact:true}).click();
+   await page.getByLabel('修正位置',{exact:true}).fill('第 2 段');
+   await page.getByRole('button',{name:'保存修正',exact:true}).click();
+   await page.getByRole('button',{name:'标记已核对',exact:true}).click();
+   await expect(page.getByText('第 2 段 · 已核对',{exact:true})).toBeVisible();
    await page.getByRole('button',{name:'审查事实',exact:true}).click();
    await dialog.getByRole('checkbox',{name:'我确认这是自己真实经历的准确表达。'}).check();
    await dialog.getByRole('checkbox',{name:/我已单独核实/}).check();
