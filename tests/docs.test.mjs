@@ -233,3 +233,13 @@ test('validator rejects broken local links', () => {
 test('validator rejects an unclosed code fence', () => {
   assert.throws(() => validateMarkdown('```text\nincomplete', 'TECH_SPEC.md'), /unclosed code fence/);
 });
+
+test('README explains how to link evidence and trace it from a resume snapshot', () => {
+  const readme = docs['README.md'];
+  assert.ok(readme.includes('[事实与证据](#事实与证据)'));
+  const guide = readme.split('## 事实与证据')[1]?.split('\n## ')[0];
+  assert.ok(guide);
+  for (const step of ['保存别名', '保存证据关联', '标记已核对', '事实与证据快照']) {
+    assert.ok(guide.includes(step), step);
+  }
+});
