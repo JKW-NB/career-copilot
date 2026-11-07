@@ -243,3 +243,11 @@ test('README explains how to link evidence and trace it from a resume snapshot',
     assert.ok(guide.includes(step), step);
   }
 });
+
+test('README data flow includes a worked example and a reverse trace', () => {
+  const section = docs['README.md'].split('## 数据流向')[1]?.split('\n## ')[0];
+  const example = section?.split('### 示例')[1];
+  assert.ok(example);
+  assert.match(example, /上传材料并确认事实[\s\S]*按岗位选材[\s\S]*确认简历内容[\s\S]*登记投递/);
+  assert.match(example, /投递后回查.*归档 PDF.*内容快照.*事实版本.*访谈记录\.pdf/);
+});
