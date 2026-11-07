@@ -173,6 +173,15 @@ for(let cycle=1;cycle<=2;cycle++){
    await expect(page.getByRole('button',{name:'补充工作记录.txt',exact:true})).toBeVisible();
    await page.getByLabel('新增一条可核实的事实').fill('整理 12 份访谈记录，形成问题清单');
    await page.getByRole('button',{name:'保存待审查事实'}).click();
+   await page.getByText('事实与证据 · 0 份关联',{exact:true}).click();
+   await page.getByLabel('事实别名',{exact:true}).fill('访谈整理');
+   await page.locator('.real-evidence-map').getByRole('button',{name:'保存别名',exact:true}).click();
+   await expect(page.getByText('访谈整理',{exact:true})).toBeVisible();
+   await page.getByLabel('关联材料',{exact:true}).selectOption({label:'访谈原始记录.txt'});
+   await page.getByLabel('证据位置（可选）').fill('第 2 段');
+   await page.getByRole('button',{name:'保存证据关联'}).click();
+   await page.getByRole('button',{name:'标记已核对'}).click();
+   await expect(page.getByText('第 2 段 · 已核对',{exact:true})).toBeVisible();
    await page.getByRole('button',{name:'审查事实',exact:true}).click();
    await dialog.getByRole('checkbox',{name:'我确认这是自己真实经历的准确表达。'}).check();
    await dialog.getByRole('checkbox',{name:/我已单独核实/}).check();
@@ -233,6 +242,9 @@ for(let cycle=1;cycle<=2;cycle++){
    await expect(page.getByRole('button',{name:'导出到 Reactive Resume',exact:true})).toBeDisabled();
    await page.getByRole('button',{name:'确认内容就绪',exact:true}).click();
    await expect(page.getByText('内容 V1 · 已就绪',{exact:true})).toBeVisible();
+   const readySnapshot = await page.evaluate(async () => (await window.__TAURI_INTERNALS__.invoke('workspace_snapshot')).resumes[0]);
+   assert.equal(readySnapshot.plan.items[0].evidence[0].locator,'第 2 段');
+   assert.equal(readySnapshot.plan.items[0].evidence[0].checked,1);
    const jsonDownload=page.waitForEvent('download');
    await page.getByRole('button',{name:'导出到 Reactive Resume',exact:true}).click();
    const jsonFile=path.join(runRoot,'reactive-resume.json');
@@ -327,6 +339,9 @@ for(let cycle=1;cycle<=2;cycle++){
    await expect(page.getByText(finalFilename,{exact:false}).first()).toBeVisible();
    await page.locator('details').first().locator('summary').click();
    await expect(page.locator('.real-paper')).toContainText('12 份访谈记录');
+   const historyEvidence = page.getByRole('heading',{name:'事实与证据快照'}).locator('..');
+   await expect(historyEvidence.getByRole('button',{name:'访谈原始记录.txt'})).toBeVisible();
+   await expect(historyEvidence).toContainText('第 2 段 · 已核对');
    await page.getByRole('combobox',{name:'投递状态',exact:true}).selectOption('VOIDED');
    await page.getByRole('button',{name:'更新记录'}).click();
    await expect(page.getByRole('combobox',{name:'投递状态',exact:true})).toHaveValue('VOIDED');

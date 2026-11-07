@@ -28,7 +28,7 @@ fn upgrades_v1_workspace_with_identity_and_backup_intact() {
     drop(db);
     let storage = Storage::initialize(&dir.0).unwrap();
     assert_eq!(storage.info().workspace_id, identity);
-    assert_eq!(storage.info().schema_version, 4);
+    assert_eq!(storage.info().schema_version, 5);
     assert!(workspace::snapshot(&storage).unwrap()["assets"]
         .as_array()
         .unwrap()
@@ -217,6 +217,38 @@ fn ready(s: &Storage) -> (String, String, String) {
     let content = resume(s, &p);
     act(s, json!({"type":"mark_ready","resume_id":content})).unwrap();
     (content, f, r)
+}
+
+#[test]
+fn evidence_review_and_resume_snapshots_are_versioned() {
+    let dir = Dir::new();
+    let s = Storage::initialize(&dir.0).unwrap();
+    let a = asset(&s);
+    let other = asset(&s);
+    let file = workspace::attach_evidence(&s, &a, "notes.txt", b"original").unwrap();
+    let foreign = workspace::attach_evidence(&s, &other, "foreign.txt", b"foreign").unwrap();
+    let (fact_id, draft) = fact(&s, &a, "整理访谈并形成问题清单");
+    let set = |rev: &str, evidence: &Value, checked: bool| {
+        act(
+            &s,
+            json!({"type":"set_fact_evidence","fact_id":fact_id,"expected_revision_id":rev,"evidence_id":evidence["id"],"locator":"第 4 页","checked":checked}),
+        )
+    };
+    assert!(set(&draft, &foreign, true).is_err());
+    set(&draft, &file, true).unwrap();
+    let confirmed = confirm(&s, &fact_id, &draft);
+    assert!(set(&draft, &file, false).is_err());
+    let (job, analysis) = job(&s);
+    let content = resume(&s, &portfolio(&s, &job, &analysis, &confirmed));
+    act(&s, json!({"type":"mark_ready","resume_id":content})).unwrap();
+    set(&confirmed, &file, false).unwrap();
+    act(&s,json!({"type":"revise_fact","fact_id":fact_id,"expected_revision_id":confirmed,"content":"归纳访谈问题","ownership":"CONTRIBUTOR"})).unwrap();
+    let state = workspace::snapshot(&s).unwrap();
+    assert_eq!(state["evidenceLinks"], json!([]));
+    let saved = &state["resumes"][0]["plan"]["items"][0]["evidence"][0];
+    assert_eq!(saved["locator"], "第 4 页");
+    assert_eq!(saved["checked"], 1);
+    assert_eq!(saved["name"], "notes.txt");
 }
 
 #[test]

@@ -68,6 +68,26 @@ pub enum Action {
     ArchiveAsset {
         contribution_id: String,
     },
+    RenameFactNode {
+        fact_id: String,
+        alias: String,
+    },
+    RenameEvidenceNode {
+        evidence_id: String,
+        alias: String,
+    },
+    SetFactEvidence {
+        fact_id: String,
+        expected_revision_id: String,
+        evidence_id: String,
+        locator: String,
+        checked: bool,
+    },
+    RemoveFactEvidence {
+        fact_id: String,
+        expected_revision_id: String,
+        evidence_id: String,
+    },
     AddJob {
         company: String,
         role_title: String,
@@ -305,6 +325,7 @@ pub(crate) fn execute_in_transaction(
                 true,
                 json!({"source":"USER_CONFIRMATION","highRiskReviewed":risk_acknowledged,"confirmedAt":now(&tx)?}),
             )?;
+            tx.execute("INSERT INTO fact_evidence_links SELECT ?1,evidence_id,locator,checked FROM fact_evidence_links WHERE revision_id=?2", params![rev,expected_revision_id])?;
             json!({"revisionId":rev})
         }
         Action::ReviseFact {
@@ -324,6 +345,67 @@ pub(crate) fn execute_in_transaction(
         } => {
             current_fact(&tx, &fact_id, &expected_revision_id)?;
             tx.execute("UPDATE facts SET state='RETRACTED' WHERE id=?1", [fact_id])?;
+            json!({})
+        }
+        Action::RenameFactNode { fact_id, alias } => {
+            exists(
+                &tx,
+                "SELECT EXISTS(SELECT 1 FROM facts WHERE id=?1)",
+                &fact_id,
+            )?;
+            let alias = alias.trim();
+            if alias.chars().count() > 80 {
+                return Err(fail("INVALID_INPUT", "别名不能超过 80 字。"));
+            }
+            tx.execute("INSERT INTO fact_node_aliases VALUES (?1,?2) ON CONFLICT(fact_id) DO UPDATE SET alias=excluded.alias", params![fact_id,alias])?;
+            json!({})
+        }
+        Action::RenameEvidenceNode { evidence_id, alias } => {
+            exists(
+                &tx,
+                "SELECT EXISTS(SELECT 1 FROM asset_evidence WHERE id=?1)",
+                &evidence_id,
+            )?;
+            let alias = alias.trim();
+            if alias.chars().count() > 80 {
+                return Err(fail("INVALID_INPUT", "别名不能超过 80 字。"));
+            }
+            tx.execute("INSERT INTO evidence_node_aliases VALUES (?1,?2) ON CONFLICT(evidence_id) DO UPDATE SET alias=excluded.alias", params![evidence_id,alias])?;
+            json!({})
+        }
+        Action::SetFactEvidence {
+            fact_id,
+            expected_revision_id,
+            evidence_id,
+            locator,
+            checked,
+        } => {
+            current_fact(&tx, &fact_id, &expected_revision_id)?;
+            let same_asset: bool = tx.query_row(
+                "SELECT EXISTS(SELECT 1 FROM facts f JOIN asset_evidence e ON e.contribution_id=f.contribution_id JOIN contributions c ON c.id=f.contribution_id WHERE f.id=?1 AND e.id=?2 AND c.status!='ARCHIVED')",
+                params![fact_id,evidence_id], |row| row.get(0),
+            )?;
+            if !same_asset {
+                return Err(fail("INVALID_INPUT", "请选择同一职业资产下的材料。"));
+            }
+            let locator = locator.trim();
+            if locator.chars().count() > 500 {
+                return Err(fail("INVALID_INPUT", "证据位置不能超过 500 字。"));
+            }
+            tx.execute("INSERT INTO fact_evidence_links VALUES (?1,?2,?3,?4) ON CONFLICT(revision_id,evidence_id) DO UPDATE SET locator=excluded.locator,checked=excluded.checked",
+                params![expected_revision_id,evidence_id,locator,checked])?;
+            json!({})
+        }
+        Action::RemoveFactEvidence {
+            fact_id,
+            expected_revision_id,
+            evidence_id,
+        } => {
+            current_fact(&tx, &fact_id, &expected_revision_id)?;
+            tx.execute(
+                "DELETE FROM fact_evidence_links WHERE revision_id=?1 AND evidence_id=?2",
+                params![expected_revision_id, evidence_id],
+            )?;
             json!({})
         }
         Action::ArchiveAsset { contribution_id } => {
@@ -486,21 +568,20 @@ pub(crate) fn execute_in_transaction(
                 .optional()?;
             let (status, plan) = row.ok_or_else(|| fail("NOT_FOUND", "内容版本不存在。"))?;
             if status != "CONTENT_READY" {
-                let plan: Value = serde_json::from_str(&plan)?;
+                let mut plan: Value = serde_json::from_str(&plan)?;
                 let items = plan["items"]
-                    .as_array()
+                    .as_array_mut()
                     .ok_or_else(|| fail("INVALID_DATA", "内容缺少来源事实。"))?;
                 for item in items {
-                    allowed(
-                        &tx,
-                        item["revisionId"]
-                            .as_str()
-                            .ok_or_else(|| fail("INVALID_DATA", "内容缺少来源引用。"))?,
-                    )?;
+                    let revision = item["revisionId"]
+                        .as_str()
+                        .ok_or_else(|| fail("INVALID_DATA", "内容缺少来源引用。"))?;
+                    allowed(&tx, revision)?;
+                    item["evidence"] = json!(snapshot_evidence(&tx, revision)?);
                 }
                 tx.execute(
-                    "UPDATE resume_content_versions SET status='CONTENT_READY' WHERE id=?1",
-                    [&resume_id],
+                    "UPDATE resume_content_versions SET status='CONTENT_READY',content_plan_json=?2 WHERE id=?1",
+                    params![resume_id,plan.to_string()],
                 )?;
             }
             json!({"id":resume_id})
@@ -567,13 +648,26 @@ fn rows(db: &Connection, sql: &str) -> AppResult<Vec<Value>> {
         .map(|s| serde_json::from_str(s).map_err(AppError::from))
         .collect()
 }
+fn snapshot_evidence(db: &Connection, revision: &str) -> AppResult<Vec<Value>> {
+    let mut statement = db.prepare("SELECT json_object('evidenceId',e.id,'name',e.display_name,'alias',coalesce(a.alias,''),'locator',l.locator,'checked',l.checked) FROM fact_evidence_links l JOIN asset_evidence e ON e.id=l.evidence_id LEFT JOIN evidence_node_aliases a ON a.evidence_id=e.id WHERE l.revision_id=?1 ORDER BY e.id")?;
+    let values = statement
+        .query_map([revision], |r| r.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    values
+        .iter()
+        .map(|s| serde_json::from_str(s).map_err(AppError::from))
+        .collect()
+}
+
 pub fn snapshot(storage: &Storage) -> AppResult<Value> {
     let mut db = storage.connection()?;
     let tx = db.transaction()?;
     let value = json!({
     "assets":rows(&tx,"SELECT json_object('id',c.id,'title',c.title,'summary',c.summary,'organization',e.organization,'role',e.role) FROM contributions c JOIN projects p ON p.id=c.project_id JOIN experiences e ON e.id=p.experience_id WHERE c.status!='ARCHIVED' ORDER BY e.created_at DESC,c.id")?,
     "facts":rows(&tx,"SELECT json_object('id',f.id,'contributionId',f.contribution_id,'state',f.state,'revisionId',r.id,'content',r.content,'verification',r.verification_status,'risk',r.risk_level,'ownership',r.ownership_scope,'revision',r.revision_no) FROM facts f JOIN fact_revisions r ON r.id=f.current_revision_id ORDER BY r.created_at,f.id")?,
-    "evidence":rows(&tx,"SELECT json_object('id',id,'contributionId',contribution_id,'name',display_name,'size',size_bytes) FROM asset_evidence ORDER BY created_at,id")?,
+    "evidence":rows(&tx,"SELECT json_object('id',e.id,'contributionId',e.contribution_id,'name',e.display_name,'size',e.size_bytes,'alias',coalesce(a.alias,'')) FROM asset_evidence e LEFT JOIN evidence_node_aliases a ON a.evidence_id=e.id ORDER BY e.created_at,e.id")?,
+    "factAliases":rows(&tx,"SELECT json_object('factId',fact_id,'alias',alias) FROM fact_node_aliases ORDER BY fact_id")?,
+    "evidenceLinks":rows(&tx,"SELECT json_object('revisionId',l.revision_id,'evidenceId',l.evidence_id,'locator',l.locator,'checked',l.checked) FROM fact_evidence_links l JOIN facts f ON f.current_revision_id=l.revision_id ORDER BY l.revision_id,l.evidence_id")?,
     "jobs":rows(&tx,"SELECT json_object('id',id,'company',company,'roleTitle',role_title,'jd',jd_current_text) FROM jobs ORDER BY created_at DESC,id")?,
     "analyses":rows(&tx,"SELECT json_object('id',id,'jobId',job_id,'version',version_no,'requirements',json(proof_json)) FROM job_analysis_versions ORDER BY created_at,id")?,
     "portfolios":rows(&tx,"SELECT json_object('id',id,'jobId',job_id,'analysisId',job_analysis_version_id,'version',version_no,'revisionIds',json_extract(snapshot_context_json,'$.revisionIds')) FROM contribution_portfolios ORDER BY created_at,id")?,

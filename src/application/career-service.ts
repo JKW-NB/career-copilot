@@ -5,13 +5,15 @@ export interface Fact { id: string; contributionId: string; revisionId: string; 
 export interface Job { id: string; company: string; roleTitle: string; jd: string }
 export interface Analysis { id: string; jobId: string; version: number; requirements: string[] }
 export interface Portfolio { id: string; jobId: string; analysisId: string; version: number; revisionIds: string[] }
-export interface ResumePlan { name: string; contact: string; education: string; items: { revisionId: string; text: string; title: string; organization: string; role: string }[] }
+export interface EvidenceReference { evidenceId: string; locator: string; checked: number }
+export interface EvidenceSnapshot extends EvidenceReference { name: string; alias: string }
+export interface ResumePlan { name: string; contact: string; education: string; items: { revisionId: string; text: string; title: string; organization: string; role: string; evidence?: EvidenceSnapshot[] }[] }
 export interface Resume { id: string; jobId: string; portfolioId: string; version: number; status: 'DRAFT' | 'CONTENT_READY'; plan: ResumePlan; createdAt: string }
 export interface FinalFile { id: string; resumeId: string; name: string; hash: string; used: number; createdAt: string }
 export interface Application { id: string; jobId: string; fileId: string; channel: string; status: string; note: string; appliedAt: string }
-export interface AssetEvidence { id: string; contributionId: string; name: string; size: number }
-export interface CareerState { assets: Asset[]; evidence: AssetEvidence[]; facts: Fact[]; jobs: Job[]; analyses: Analysis[]; portfolios: Portfolio[]; resumes: Resume[]; files: FinalFile[]; applications: Application[] }
-export const emptyCareerState = (): CareerState => ({ assets: [], evidence: [], facts: [], jobs: [], analyses: [], portfolios: [], resumes: [], files: [], applications: [] });
+export interface AssetEvidence { id: string; contributionId: string; name: string; alias: string; size: number }
+export interface CareerState { assets: Asset[]; evidence: AssetEvidence[]; factAliases: { factId: string; alias: string }[]; evidenceLinks: (EvidenceReference & { revisionId: string })[]; facts: Fact[]; jobs: Job[]; analyses: Analysis[]; portfolios: Portfolio[]; resumes: Resume[]; files: FinalFile[]; applications: Application[] }
+export const emptyCareerState = (): CareerState => ({ assets: [], evidence: [], factAliases: [], evidenceLinks: [], facts: [], jobs: [], analyses: [], portfolios: [], resumes: [], files: [], applications: [] });
 export type Action =
  | { type: 'add_asset'; organization: string; role: string; title: string; summary: string }
  | { type: 'add_fact'; contribution_id: string; content: string; ownership: string }
@@ -19,6 +21,10 @@ export type Action =
  | { type: 'revise_fact'; fact_id: string; expected_revision_id: string; content: string; ownership: string }
  | { type: 'retract_fact'; fact_id: string; expected_revision_id: string }
  | { type: 'archive_asset'; contribution_id: string }
+ | { type: 'rename_fact_node'; fact_id: string; alias: string }
+ | { type: 'rename_evidence_node'; evidence_id: string; alias: string }
+ | { type: 'set_fact_evidence'; fact_id: string; expected_revision_id: string; evidence_id: string; locator: string; checked: boolean }
+ | { type: 'remove_fact_evidence'; fact_id: string; expected_revision_id: string; evidence_id: string }
  | { type: 'add_job'; company: string; role_title: string; jd: string }
  | { type: 'save_analysis'; job_id: string; expected_jd: string; requirements: string[] }
  | { type: 'confirm_portfolio'; job_id: string; analysis_id: string; revision_ids: string[] }

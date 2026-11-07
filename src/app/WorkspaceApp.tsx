@@ -9,6 +9,7 @@ import { AiSettings } from './AiSettings';
 import { RealAssistant, type AiIntent } from './RealAssistant';
 import { reactiveResumeJson, reactiveResumeFilename } from '../application/reactive-resume';
 import { ReactiveResumeSettings, ReactiveResumeActions } from './ReactiveResume';
+import { FactEvidence, NodeAlias, ResumeEvidence } from './FactEvidence';
 import './real-ai.css';
 import './workspace.css';
 type Page = 'overview' | 'assets' | 'jobs' | 'library' | 'settings';
@@ -81,6 +82,10 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
   finally { setBusy(false); }
  };
  const act = (action: Action, message: string) => perform(() => service.execute(action), message);
+ const openEvidence = (id: string, name: string) => perform(async () => {
+  const bytes = await service.readEvidence(id);
+  download(bytes as BlobPart, 'application/octet-stream', name);
+ }, '佐证材料完整性检查通过，已下载。');
  const submit = (event: FormEvent<HTMLFormElement>, action: (data: FormData) => Promise<boolean>, close?: () => void) => {
   event.preventDefault(); const form = event.currentTarget;
   void action(new FormData(form)).then(ok => { if (ok) { form.reset(); close?.(); } });
@@ -147,15 +152,14 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
      }} /></label>
      <ul>
       {state.evidence.filter(item => item.contributionId === asset.id).map(item => <li key={item.id}>
-       <button className="text-button" type="button" onClick={() => void perform(async () => {
-        const bytes = await service.readEvidence(item.id);
-        download(bytes as BlobPart, 'application/octet-stream', item.name);
-       }, '佐证材料完整性检查通过，已下载。')}>{item.name}</button>
+       <button className="text-button" type="button" onClick={() => void openEvidence(item.id, item.name)}>{item.alias || item.name}</button>
+       {item.alias && <small> 原件：{item.name}</small>}
+       <NodeAlias label={`材料别名 · ${item.name}`} alias={item.alias} onSave={alias => void act({type:'rename_evidence_node',evidence_id:item.id,alias},'材料别名已保存。')} />
       </li>)}
      </ul>
      <h3>事实清单</h3>
      {state.facts.filter(f => f.contributionId === asset.id).map(fact => <div className={'real-fact ' + (fact.state === 'RETRACTED' ? 'retracted' : '')} key={fact.id}>
-      <div><p>{fact.content}</p><span className={'badge ' + (fact.verification === 'USER_CONFIRMED' ? 'badge-green' : 'badge-orange')}>{fact.state === 'RETRACTED' ? '已撤回' : fact.verification === 'USER_CONFIRMED' ? '用户已确认' : '待审查'}</span> <small>版本 {fact.revision} · {owners.find(o => o[0] === fact.ownership)?.[1]}{fact.risk === 'HIGH' ? ' · 需核实数字或职责' : ''}</small></div>
+      <div><p>{fact.content}</p><span className={'badge ' + (fact.verification === 'USER_CONFIRMED' ? 'badge-green' : 'badge-orange')}>{fact.state === 'RETRACTED' ? '已撤回' : fact.verification === 'USER_CONFIRMED' ? '用户已确认' : '待审查'}</span> <small>版本 {fact.revision} · {owners.find(o => o[0] === fact.ownership)?.[1]}{fact.risk === 'HIGH' ? ' · 需核实数字或职责' : ''}</small><FactEvidence fact={fact} state={state} save={act} open={openEvidence} /></div>
       {fact.state === 'ACTIVE' && <div className="real-actions">{fact.verification === 'UNCERTAIN' && <button className="button button-secondary" onClick={() => setReview(fact)}>审查事实</button>}<button className="text-button" onClick={() => setEditFact(fact)}>修订</button><button className="text-button" onClick={() => { if (window.confirm('撤回这条事实？历史快照保留，新简历将不能再使用。')) void act({ type: 'retract_fact', fact_id: fact.id, expected_revision_id: fact.revisionId }, '事实已撤回，历史快照保留。'); }}>撤回</button></div>}
      </div>)}
      <form className="real-add-fact" onSubmit={e => submit(e, d => act({ type:'add_fact', contribution_id:asset.id, content:field(d,'content'), ownership:field(d,'ownership') }, '事实已保存为待审查，请确认后再用于简历。'))}>
@@ -212,7 +216,7 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
    {page === 'library' && <div className="page-enter">
     <div className="section-heading"><div><h1>版本资料库</h1><p>历史内容保持不变，新修改生成新版本。</p></div></div>
     {!state.resumes.length && <Empty>还没有内容版本。完成岗位要求和组合后生成。</Empty>}
-    {[...state.resumes].reverse().map(r => <details className="real-card" key={r.id}><summary>{state.jobs.find(j => j.id === r.jobId)?.company} · {state.jobs.find(j => j.id === r.jobId)?.roleTitle} · 内容 V{r.version} · {r.createdAt.slice(0,10)}</summary><ResumePreview resume={r} /><button className="button button-secondary" onClick={() => download(resumeHtml(r),'text/html;charset=utf-8','resume-v'+r.version+'.html')}>导出此版本排版稿</button></details>)}
+    {[...state.resumes].reverse().map(r => <details className="real-card" key={r.id}><summary>{state.jobs.find(j => j.id === r.jobId)?.company} · {state.jobs.find(j => j.id === r.jobId)?.roleTitle} · 内容 V{r.version} · {r.createdAt.slice(0,10)}</summary><ResumePreview resume={r} /><ResumeEvidence resume={r} open={openEvidence} /><button className="button button-secondary" onClick={() => download(resumeHtml(r),'text/html;charset=utf-8','resume-v'+r.version+'.html')}>导出此版本排版稿</button></details>)}
     <h2>投递记录</h2>
     {state.applications.map(a => <article className="real-card" key={a.id}><h3>{state.jobs.find(j => j.id === a.jobId)?.company} · {state.jobs.find(j => j.id === a.jobId)?.roleTitle}</h3><p>{state.files.find(f => f.id === a.fileId)?.name} · {a.channel} · {a.appliedAt.slice(0,10)}</p><form key={a.id + a.status + a.note} className="real-actions" onSubmit={e => submit(e,d => act({type:'update_application',application_id:a.id,status:field(d,'status'),note:field(d,'note')},'投递状态已更新，文件绑定和冻结保持。'))}><label>状态<select name="status" aria-label="投递状态" defaultValue={a.status}>{[['APPLIED','已投递'],['IN_PROCESS','流程中'],['ENDED','已结束'],['VOIDED','记录作废']].map(([v,l]) => <option value={v} key={v}>{l}</option>)}</select></label><label>备注<input name="note" defaultValue={a.note} maxLength={4000} /></label><button className="button button-secondary">更新记录</button></form></article>)}
    </div>}
