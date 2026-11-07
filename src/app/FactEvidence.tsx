@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { type Action, type CareerState, type Fact, type Resume } from '../application/career-service';
 
 type Save = (action: Action, message: string) => Promise<boolean>;
@@ -13,6 +14,60 @@ export function NodeAlias({ label, alias, onSave }: { label: string; alias: stri
  </form>;
 }
 
+export function EvidenceCanvas({ assetId, state, open }: { assetId: string; state: CareerState; open: OpenEvidence }) {
+ const arrowId = useId();
+ const files = state.evidence.filter(file => file.contributionId === assetId);
+ const facts = state.facts.filter(fact => fact.contributionId === assetId);
+ const factRows = new Map(facts.map((fact, index) => [fact.revisionId, index]));
+ const fileRows = new Map(files.map((file, index) => [file.id, index]));
+ const references = state.resumes.flatMap(resume => resume.plan.items.flatMap((item, index) =>
+  factRows.has(item.revisionId) ? [{resume, item, index}] : []));
+ if (!files.length && !facts.length) return null;
+ const height = 88 * Math.max(files.length, facts.length, references.length, 1);
+ const line = (from: number, to: number, boundary: number, key: string) => {
+  const y1 = from * 88 + 32;
+  const y2 = to * 88 + 32;
+  return <path key={key} d={`M ${boundary - 30} ${y1} C ${boundary} ${y1}, ${boundary} ${y2}, ${boundary + 30} ${y2}`}
+   vectorEffect="non-scaling-stroke" />;
+ };
+ return <details className="real-evidence-map">
+  <summary>证据关系画布</summary>
+  <div className="evidence-canvas-scroll" tabIndex={0} role="region" aria-label="证据关系画布，可横向滚动">
+   <div className="evidence-canvas">
+    <div className="evidence-lanes">
+     <section aria-label="佐证原件"><h4>佐证原件</h4>
+      {files.map(file => <button key={file.id} className="evidence-node" type="button" title={file.name}
+       onClick={() => void open(file.id, file.name)}><strong>{file.alias || file.name}</strong></button>)}
+     </section>
+     <section aria-label="事实版本"><h4>事实版本</h4>
+      {facts.map(fact => <div className="evidence-node" key={fact.revisionId} title={fact.content}>
+       <strong>{state.factAliases.find(alias => alias.factId === fact.id)?.alias || fact.content}</strong><small>V{fact.revision}</small>
+      </div>)}
+     </section>
+     <section aria-label="简历引用"><h4>简历引用</h4>
+      {references.map(({resume, item, index}) => <div className="evidence-node" key={resume.id + ':' + index} title={item.text}>
+       <strong>{item.text}</strong><small>{state.jobs.find(job => job.id === resume.jobId)?.roleTitle ?? '岗位简历'} · 内容 V{resume.version}</small>
+      </div>)}
+     </section>
+    </div>
+    <svg className="evidence-edges" viewBox={`0 0 900 ${height}`} preserveAspectRatio="none" height={height} aria-hidden="true">
+     <defs><marker id={arrowId} markerWidth="5" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 0 L 5 3 L 0 6 Z" fill="#527a64" />
+     </marker></defs>
+     <g fill="none" stroke="#527a64" strokeWidth="1.5" markerEnd={`url(#${arrowId})`}>
+      {state.evidenceLinks.map(link => {
+       const from = fileRows.get(link.evidenceId);
+       const to = factRows.get(link.revisionId);
+       return from !== undefined && to !== undefined && line(from, to, 300, link.evidenceId + ':' + link.revisionId);
+      })}
+      {references.map(({resume, item, index}, row) => line(factRows.get(item.revisionId)!, row, 600, resume.id + ':' + index))}
+     </g>
+    </svg>
+   </div>
+  </div>
+ </details>;
+}
+
 export function FactEvidence({ fact, state, save, open }: { fact: Fact; state: CareerState; save: Save; open: OpenEvidence }) {
  const files = state.evidence.filter(file => file.contributionId === fact.contributionId);
  const links = state.evidenceLinks.filter(link => link.revisionId === fact.revisionId);
@@ -21,8 +76,8 @@ export function FactEvidence({ fact, state, save, open }: { fact: Fact; state: C
  const target = { fact_id: fact.id, expected_revision_id: fact.revisionId };
  return <details className="real-evidence-map">
   <summary>事实与证据 · {links.length} 份关联</summary>
-  <div className="real-evidence-columns">
-   <section><h4>佐证原件</h4>
+  <div>
+   <section>
     {links.length ? <ul>{links.map(link => {
      const file = files.find(item => item.id === link.evidenceId);
      if (!file) return null;
@@ -37,12 +92,9 @@ export function FactEvidence({ fact, state, save, open }: { fact: Fact; state: C
      </li>;
     })}</ul> : <p>尚未关联佐证。</p>}
    </section>
-   <span className="real-evidence-arrow" aria-hidden="true">→</span>
-   <section><h4>事实 V{fact.revision}</h4><p>{alias || fact.content}</p>
-    {alias && <small>原文：{fact.content}</small>}
+   <section>
     <NodeAlias label="事实别名" alias={alias} onSave={value => void save({type:'rename_fact_node',fact_id:fact.id,alias:value},'事实别名已保存。')} />
    </section>
-   <span className="real-evidence-arrow" aria-hidden="true">→</span>
    <section><h4>简历引用</h4>
     {resumes.length ? <ul>{resumes.map(resume => <li key={resume.id}>{state.jobs.find(job => job.id === resume.jobId)?.roleTitle ?? '岗位简历'} · 内容 V{resume.version}</li>)}</ul> : <p>此事实版本尚未被简历引用。</p>}
    </section>

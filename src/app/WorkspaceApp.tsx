@@ -9,7 +9,7 @@ import { AiSettings } from './AiSettings';
 import { RealAssistant, type AiIntent } from './RealAssistant';
 import { reactiveResumeJson, reactiveResumeFilename } from '../application/reactive-resume';
 import { ReactiveResumeSettings, ReactiveResumeActions } from './ReactiveResume';
-import { FactEvidence, NodeAlias, ResumeEvidence } from './FactEvidence';
+import { EvidenceCanvas, FactEvidence, NodeAlias, ResumeEvidence } from './FactEvidence';
 import './real-ai.css';
 import './workspace.css';
 type Page = 'overview' | 'assets' | 'jobs' | 'library' | 'settings';
@@ -157,6 +157,7 @@ export default function WorkspaceApp({ service: provided, aiService: providedAi 
        <NodeAlias label={`材料别名 · ${item.name}`} alias={item.alias} onSave={alias => void act({type:'rename_evidence_node',evidence_id:item.id,alias},'材料别名已保存。')} />
       </li>)}
      </ul>
+     <EvidenceCanvas assetId={asset.id} state={state} open={openEvidence} />
      <h3>事实清单</h3>
      {state.facts.filter(f => f.contributionId === asset.id).map(fact => <div className={'real-fact ' + (fact.state === 'RETRACTED' ? 'retracted' : '')} key={fact.id}>
       <div><p>{fact.content}</p><span className={'badge ' + (fact.verification === 'USER_CONFIRMED' ? 'badge-green' : 'badge-orange')}>{fact.state === 'RETRACTED' ? '已撤回' : fact.verification === 'USER_CONFIRMED' ? '用户已确认' : '待审查'}</span> <small>版本 {fact.revision} · {owners.find(o => o[0] === fact.ownership)?.[1]}{fact.risk === 'HIGH' ? ' · 需核实数字或职责' : ''}</small><FactEvidence fact={fact} state={state} save={act} open={openEvidence} /></div>
