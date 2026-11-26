@@ -82,7 +82,16 @@
 
 ## 开源致谢
 
-- **Reactive Resume 团队和贡献者**提供简历编辑器、模板与 PDF 导出。Career Copilot 参考其导入格式，并调用其公开 REST API 创建排版副本、取回 PDF。Career Copilot 负责职业事实审查、岗位选材、本地版本关联和投递归档。[上游项目](https://github.com/reactive-resume/reactive-resume) · [API 文档](https://docs.rxresu.me/guides/using-the-api)
+### Reactive Resume
+
+感谢 **Reactive Resume 的作者、维护者与社区贡献者**。其开源简历编辑器、模板和 PDF 导出能力，让 Career Copilot 的求职流程能够延伸到排版与最终文件交付。[上游项目](https://github.com/reactive-resume/reactive-resume)
+
+Career Copilot 通过格式适配和公开 REST API 对接 Reactive Resume，将已确认的简历内容创建为排版副本，并取回 PDF 归档。简历编辑器、模板与 PDF 渲染能力归功于上游项目。[API 文档](https://docs.rxresu.me/guides/using-the-api)
+
+本项目的工作集中在求职需求拆解、职业资产与事实版本管理、岗位选材、证据关系画布、人工核对，以及本地简历归档与投递记录，并完成两端的流程集成。[集成说明](docs/REACTIVE_RESUME.md)
+
+### 文档参考
+
 - **GitHub Awesome Copilot 的贡献者**提供了 README 写作参考。本页的导览与快速开始参考了其 `create-readme` 技能。[技能源码](https://github.com/github/awesome-copilot/blob/main/skills/create-readme/SKILL.md)
 
 ## 快速开始

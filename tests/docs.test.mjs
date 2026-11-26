@@ -250,3 +250,12 @@ test('README data flow embeds the fact evidence screenshot', () => {
   const screenshot = readFileSync(resolve(root, 'docs/fact-evidence-flow.png'));
   assert.equal(screenshot.subarray(1, 4).toString(), 'PNG');
 });
+
+test('README credits Reactive Resume and explains the integration responsibilities', () => {
+  const credits = docs['README.md'].split('## 开源致谢')[1]?.split('\n## ')[0];
+  assert.ok(credits);
+  assert.match(credits, /作者、维护者与社区贡献者/);
+  assert.match(credits, /https:\/\/github.com\/reactive-resume\/reactive-resume/);
+  assert.match(credits, /编辑器、模板与 PDF 渲染能力归功于上游项目/);
+  assert.match(credits, /集成说明.*docs\/REACTIVE_RESUME\.md/);
+});
